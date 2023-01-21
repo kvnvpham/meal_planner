@@ -60,7 +60,7 @@
                         {% for recipe in food_cat.recipe %}
                         <div class="col-lg-3 col-md-4">
                             <div class="card">
-                                <a href="#">
+                                <a href="{{ url_for('view_recipe', user_id=user_id, recipe_id=recipe.id) }}">
                                     <img src="{{ recipe.img }}" class="card-img-top card-images" alt="recipe image">
                                 </a>
                                 <div class="card-body">

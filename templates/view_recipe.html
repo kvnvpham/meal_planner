@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Recipe{% endblock %}
+
+{% block main %}
+    <section id="recipe-title">
+        <div class="container-fluid view-recipe banner-pad text-start">
+            <div>
+                <h2>{{ recipe.name }}</h2>
+            </div>
+        </div>
+    </section>
+
+    <section id="recipe-body">
+        <div class="container-fluid">
+            <img src="{{ recipe.img }}" class="recipe-img">
+            <p>Category: {{ recipe.recipe_type }}</p>
+            <p>Website: {{ recipe.link }}</p>
+            <p>Ingredients: {{ recipe.ingredients | safe }}</p>
+            <p>Directions: {{ recipe.directions | safe }}</p>
+        </div>
+    </section>
+
+{% endblock %}

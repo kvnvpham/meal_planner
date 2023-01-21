@@ -237,6 +237,16 @@ def create_recipe(user_id, category_id):
         abort(403)
 
 
+@app.route("/view_recipe/<int:user_id>/<recipe_id>")
+def view_recipe(user_id, recipe_id):
+    if user_id == current_user.id:
+        recipe = Recipes.query.get(recipe_id)
+
+        return render_template("view_recipe.html", user_id=user_id, recipe=recipe)
+    else:
+        abort(403)
+
+
 @app.context_processor
 def inj_copyright():
     return {"year": date.today().year}
