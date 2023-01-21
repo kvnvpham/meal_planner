@@ -6,18 +6,39 @@
     <section id="recipe-title">
         <div class="container-fluid view-recipe banner-pad text-start">
             <div>
-                <h2>{{ recipe.name }}</h2>
+                <h2>Recipe</h2>
             </div>
         </div>
     </section>
 
     <section id="recipe-body">
-        <div class="container-fluid">
-            <img src="{{ recipe.img }}" class="recipe-img">
-            <p>Category: {{ recipe.recipe_type }}</p>
-            <p>Website: {{ recipe.link }}</p>
-            <p>Ingredients: {{ recipe.ingredients | safe }}</p>
-            <p>Directions: {{ recipe.directions | safe }}</p>
+        <div class="container-fluid section">
+            <div class="recipe-name">
+                <h3><span class="material-symbols-outlined">restaurant</span> {{ recipe.name }}</h3>
+            </div>
+            <div class="row">
+                <div class="col-lg-6 col-md-6">
+                    <h5>Category</h5>
+                    <p class="recipe-content">{{ recipe.recipe_type }}</p>
+                    <h5>Website</h5>
+                    <p class="recipe-content"><a href="{{ recipe.link }}">{{ recipe.link }}</a></p>
+                    <h5>Ingredients</h5>
+                    <p class="recipe-content">{{ recipe.ingredients | safe }}</p>
+                    <h5>Directions</h5>
+                    <p class="recipe-content">{{ recipe.directions | safe }}</p>
+
+                    <div class="modify-content">
+                        <a href="{{ url_for('edit_recipe', user_id=user_id, recipe_id=recipe.id) }}" class="btn btn-dark" role="button">Edit</a>
+                        <a href="#" class="btn btn-dark" role="button">Change Category</a>
+                        <a href="#" class="btn btn-dark" role="button">Delete</a>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 text-center">
+                    <img src="{{ recipe.img }}" class="recipe-img">
+                </div>
+            </div>
+
+
         </div>
     </section>
 

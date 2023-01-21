@@ -50,8 +50,9 @@
                     <div class="cat-control">
                         <h3>{{ food_cat.name }}</h3>
                         <div class="category-btn">
-                            <a class="btn btn-dark modify-btn" role="button" href="{{ url_for('edit_category', user_id=user_id, category_id=food_cat.id) }}"><i class="fa-solid fa-pen-to-square"></i></a>
                             <a class="btn btn-dark modify-btn" role="button" href="{{ url_for('create_recipe', user_id=user_id, category_id=food_cat.id) }}"><i class="fa-solid fa-plus"></i></a>
+                            <a class="btn btn-dark modify-btn" role="button" href="{{ url_for('edit_category', user_id=user_id, category_id=food_cat.id) }}"><i class="fa-solid fa-pen-to-square"></i></a>
+                            <a class="btn btn-dark modify-btn" role="button" href="{{ url_for('delete_category', user_id=user_id, category_id=food_cat.id) }}"><i class="fa-solid fa-x"></i></a>
                         </div>
                     </div>
                 </div>

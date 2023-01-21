@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, flash, abort
+from flask import Flask, render_template, redirect, request, url_for, flash, abort
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
 from flask_bootstrap import Bootstrap
@@ -210,6 +210,17 @@ def edit_category(user_id, category_id):
         abort(403)
 
 
+@app.route("/delete_category/<int:user_id>/<int:category_id>")
+def delete_category(user_id, category_id):
+    if user_id == current_user.id:
+        category = Category.query.get(category_id)
+        db.session.delete(category)
+        db.session.commit()
+        return redirect(url_for("my_recipes", user_id=user_id))
+    else:
+        abort(403)
+
+
 @app.route("/create_recipe/<int:user_id>/<int:category_id>", methods=["GET", "POST"])
 @login_required
 def create_recipe(user_id, category_id):
@@ -246,6 +257,54 @@ def view_recipe(user_id, recipe_id):
     else:
         abort(403)
 
+
+@app.route("/edit_recipe/<int:user_id>", methods=["GET", "POST"])
+def edit_recipe(user_id):
+    if user_id == current_user.id:
+        recipe_id = request.args.get("recipe_id")
+        recipe = Recipes.query.get(recipe_id)
+
+        form = RecipesForm(
+            name=recipe.name,
+            recipe_type=recipe.recipe_type,
+            img=recipe.img,
+            link=recipe.link,
+            ingredients=recipe.ingredients,
+            directions=recipe.directions
+        )
+
+        if form.cancel.data:
+            return redirect(url_for("view_recipe", user_id=user_id, recipe_id=recipe_id))
+        if form.validate_on_submit():
+            recipe.name = form.name.data
+            recipe.recipe_type = form.recipe_type.data
+            recipe.img = form.img.data
+            recipe.link = form.link.data
+            recipe.ingredients = form.ingredients.data
+            recipe.directions = form.directions.data
+            db.session.commit()
+            return redirect(url_for("view_recipe", user_id=user_id, recipe_id=recipe_id))
+        return render_template(
+            "create_recipe.html",
+            user_id=user_id,
+            form=form,
+            category_id=recipe.category_id,
+            recipe_id=recipe_id,
+            edit=True
+        )
+    else:
+        abort(403)
+
+
+@app.route("/delete_recipe/<int:user_id>/<int:recipe_id>")
+def delete_recipe(user_id, recipe_id):
+    if user_id == current_user.id:
+        recipe = Recipes.query.get(recipe_id)
+        db.session.delete(recipe)
+        db.session.commit()
+        return redirect(url_for("my_recipes", user_id=user_id))
+    else:
+        abort(403)
 
 @app.context_processor
 def inj_copyright():
