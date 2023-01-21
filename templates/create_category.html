@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Category & Recipes{% endblock %}
+
+{% block main %}
+
+    <section class="cat-recipes-title">
+        <div class="container-fluid cat-bg banner-pad text-start">
+            <h2>Category</h2>
+        </div>
+    </section>
+
+    <section id="cat-recipes-form">
+        <div class="container-fluid">
+            <div class="form-section">
+                {% if not category_id %}
+                <form action="{{ url_for('create_category', user_id=user_id) }}" method="post" novalidate>
+                {% else %}
+                <form action="{{ url_for('edit_category', user_id=user_id, category_id=category_id) }}" method="post" novalidate>
+                {% endif %}
+                    {{ form.csrf_token }}
+                    {{ form.name.label(class='form-label') }}
+                    {{ form.name(class='form-control') }}
+                    {{ form.icon_img.label(class='form-label') }}
+                    {{ form.icon_img(class='form-control', placeholder=form.icon_img.description) }}
+                    {{ form.submit(class='btn btn-dark create-btn') }} {{ form.cancel(class='btn btn-dark create-btn') }}
+                </form>
+            </div>
+        </div>
+    </section>
+
+{% endblock %}

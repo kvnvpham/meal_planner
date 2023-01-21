@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Category & Recipes{% endblock %}
+
+{% block main %}
+
+    <section class="cat-recipes-title">
+        <div class="container-fluid cat-bg banner-pad text-start">
+            <h2>Recipe</h2>
+        </div>
+    </section>
+
+    <section id="cat-recipes-form">
+        <div class="container-fluid">
+            <div class="form-section">
+                <form action="{{ url_for('create_recipe', user_id=user_id, category_id=category_id) }}" method="post" novalidate>
+                    {{ form.csrf_token }}
+                    {{ form.name.label(class='form-label') }}
+                    {{ form.name(class='form-control') }}
+                    {{ form.recipe_type.label(class='form-label') }}
+                    {{ form.recipe_type(class='form-control', placeholder=form.recipe_type.description) }}
+                    {{ form.img.label(class='form-label') }}
+                    {{ form.img(class='form-control', placeholder=form.img.description) }}
+                    {{ form.link.label(class='form-label') }}
+                    {{ form.link(class='form-control') }}
+                    {{ form.ingredients.label(class='form-label') }}
+                    {{ form.ingredients(class='form-control') }}
+                    {{ form.directions.label(class='form-label') }}
+                    {{ form.directions(class='form-control') }}
+                    {{ form.submit(class='btn btn-dark create-btn') }} {{form.cancel(class='btn btn-dark create-btn') }}
+                </form>
+
+                {{ ckeditor.load() }}
+                {{ ckeditor.config(name='ingredients directions') }}
+            </div>
+        </div>
+    </section>
+
+{% endblock %}

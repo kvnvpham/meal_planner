@@ -1,0 +1,178 @@
+/* All / Base */
+
+.brand-align {
+    padding-left: 4%;
+}
+
+.content-align {
+    padding-right: 4%;
+}
+
+.section {
+    padding: 3% 5%;
+}
+
+.banner-pad {
+    padding: 7% 5%;
+}
+
+.socials {
+    padding: 2% 2% 1%;
+    color: black;
+    font-size: 1.3rem;
+}
+
+/* Index */
+
+.title-bg {
+    background-image: url('../images/bg.jpg');
+    background-position: center 45%;
+    background-size: 110vmax;
+}
+
+.title {
+    padding: 20% 4%;
+}
+
+/* Register */
+
+.register-banner {
+    background-image: url('../images/register-bg.jpg');
+    background-position: center 54%;
+    background-size: 112vmax;
+    color: #ffffff;
+}
+
+/* Login */
+
+.login-banner {
+    background-image: url('../images/login-banner.jpg');
+    background-position: center 55%;
+    background-size: 100vmax;
+    color: #ffffff;
+}
+
+.messages {
+    color: red;
+}
+
+/* My Recipes */
+
+.recipes-bg {
+    background-image: url('../images/recipes-bg.jpg');
+    background-position: center 50%;
+    background-size: 100vmax;
+}
+
+.top-btn {
+    position: fixed;
+    bottom: 1%;
+    right: 1%;
+    color: white;
+    background-color: black;
+    cursor: pointer;
+}
+
+.top-btn:hover {
+    color: white;
+    background-color: #3C4048;
+}
+
+.category-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.create-category {
+    margin-right: auto;
+}
+
+.category-dropdown {
+    margin-left: auto;
+}
+
+.dropdown-item:hover {
+    color: #FFFFFF;
+    background-color: #3C4048;
+}
+
+.dropdown-item:active {
+    color: #FFFFFF;
+    background-color: #000000;
+}
+
+.category_icon {
+    border-radius: 50%;
+    width: 4%;
+    margin: 3% 0 1%;
+}
+
+.cat-control {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex: 0 1 80%;
+    padding-bottom: 2%;
+}
+
+.category-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex: 0 1 8%;
+}
+
+.modify-btn {
+    font-size: 0.7rem;
+    padding-left: 19%;
+    padding-right: 19%;
+}
+
+@media screen and (max-width: 1200px) {
+    .edit-btn {
+        flex: 0 1 13%;
+    }
+}
+
+@media screen and (max-width: 850px) {
+    .edit-btn {
+        flex: 0 1 17%;
+    }
+}
+
+.card {
+    width: 15rem;
+}
+
+.card-images {
+    border-radius: 5%;
+    height: 15vmax;
+    object-fit: cover;
+}
+
+.card-images:hover {
+    opacity: 0.9;
+}
+
+/* Create Category / Recipes */
+
+.cat-bg {
+    background-image: url('../images/category-bg.jpg');
+    background-position: center 40%;
+    background-size: 100vmax;
+    color: #ffffff;
+}
+
+.form-section {
+    margin: 3% 50% 3% 4%;
+}
+
+.create-btn {
+    margin-top: 2%;
+}
+
+.cat-img {
+    background-position: center 40%;
+    background-size: 100vmax;
+}

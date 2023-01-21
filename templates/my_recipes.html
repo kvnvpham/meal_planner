@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}My Recipes{% endblock %}
+
+{% block main %}
+    <section id="recipes-title">
+        <div class="container-fluid recipes-bg banner-pad text-start">
+            <div>
+                <h2>All Recipes</h2>
+            </div>
+        </div>
+        <div class="back-to-top">
+            <a href="#recipes-title" class="btn top-btn" title="Back to top">
+                <i class="fa-solid fa-angle-up"></i>
+            </a>
+        </div>
+    </section>
+
+    <section class="all-recipes">
+        <div class="container-fluid section text-start">
+            <div class="category-content">
+                <span class="create-category"><a href="{{ url_for('create_category', user_id=user_id) }}" class="btn btn-dark">Create Category</a></span>
+
+                {% if user.food_categories %}
+                <span class="category-dropdown">
+                    <div class="dropdown">
+                        <button class="btn btn-dark dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Categories
+                        </button>
+                        <ul class="dropdown-menu">
+                            {% for food_cat in user.food_categories %}
+                            <li><a class="dropdown-item" href="#{{ food_cat.name }}">{{ food_cat.name }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </span>
+                {% endif %}
+            </div>
+
+            <div class="categories">
+                {% for food_cat in user.food_categories %}
+                <div id="{{ food_cat.name }}">
+                    <div class="cat-img">
+                        {% if food_cat.icon_img %}
+                        <img class="category_icon" src="{{ food_cat.icon_img }}">
+                        {% else %}
+                        <img class="category_icon" src="https://via.placeholder.com/150/3C4048/FFFFFF/?text=No Image">
+                        {% endif %}
+                    </div>
+                    <div class="cat-control">
+                        <h3>{{ food_cat.name }}</h3>
+                        <div class="category-btn">
+                            <a class="btn btn-dark modify-btn" role="button" href="{{ url_for('edit_category', user_id=user_id, category_id=food_cat.id) }}"><i class="fa-solid fa-pen-to-square"></i></a>
+                            <a class="btn btn-dark modify-btn" role="button" href="{{ url_for('create_recipe', user_id=user_id, category_id=food_cat.id) }}"><i class="fa-solid fa-plus"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="cat-recipes">
+                    <div class="row">
+                        {% for recipe in food_cat.recipe %}
+                        <div class="col-lg-3 col-md-4">
+                            <div class="card">
+                                <a href="#">
+                                    <img src="{{ recipe.img }}" class="card-img-top card-images" alt="recipe image">
+                                </a>
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ recipe.name }}</h5>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </section>
+{% endblock %}
