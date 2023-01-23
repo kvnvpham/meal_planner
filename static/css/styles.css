@@ -104,7 +104,8 @@
 
 .category_icon {
     border-radius: 50%;
-    width: 4%;
+    width: 5vmax;
+    height: 5vmax;
     margin: 3% 0 1%;
 }
 

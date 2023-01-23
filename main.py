@@ -36,7 +36,7 @@ class User(UserMixin, db.Model):
 class Category(db.Model):
     __tablename__ = "category"
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(250), unique=True, nullable=False)
+    name = db.Column(db.String(250), nullable=False)
     icon_img = db.Column(db.String, nullable=True)
 
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
@@ -59,7 +59,7 @@ class WeeklyMeal(db.Model):
 class Recipes(db.Model):
     __tablename__ = "recipes"
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(500), unique=True, nullable=False)
+    name = db.Column(db.String(500), nullable=False)
     recipe_type = db.Column(db.String, nullable=False)
     img = db.Column(db.String, nullable=False)
     link = db.Column(db.String, nullable=False)
@@ -81,7 +81,7 @@ class Recipes(db.Model):
 class Ingredients(db.Model):
     __tablename__ = "ingredients"
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(500), unique=True, nullable=False)
+    name = db.Column(db.String(500), nullable=False)
 
     recipe_id = db.Column(db.Integer, db.ForeignKey("recipes.id"))
     recipe = relationship("Recipes", back_populates="ingredient")
@@ -119,7 +119,7 @@ def register():
         )
 
         new_user = User(
-            name=form.name.data,
+            name=form.name.data.title(),
             email=form.email.data,
             password=secure_pw
         )
@@ -174,14 +174,14 @@ def create_category(user_id):
             return redirect(url_for("my_recipes", user_id=user_id))
         if form.validate_on_submit():
             new_cat = Category(
-                name=form.name.data,
+                name=form.name.data.title(),
                 icon_img=form.icon_img.data,
                 user_id=user_id
             )
             db.session.add(new_cat)
             db.session.commit()
-            return redirect(url_for("my_recipes", user_id=current_user.id))
-        return render_template("create_category.html", form=form, user_id=current_user.id)
+            return redirect(url_for("my_recipes", user_id=user_id))
+        return render_template("create_category.html", form=form, user_id=user_id)
     else:
         abort(403)
 
@@ -200,12 +200,12 @@ def edit_category(user_id, category_id):
             if form.cancel.data:
                 return redirect(url_for("my_recipes", user_id=user_id))
 
-            category_info.name = form.name.data
+            category_info.name = form.name.data.title()
             category_info.icon_img = form.icon_img.data
             db.session.commit()
             return redirect(url_for("my_recipes", user_id=user_id))
 
-        return render_template("create_category.html", form=form, user_id=user_id)
+        return render_template("create_category.html", form=form, user_id=user_id, category_id=category_id)
     else:
         abort(403)
 
@@ -213,6 +213,11 @@ def edit_category(user_id, category_id):
 @app.route("/delete_category/<int:user_id>/<int:category_id>")
 def delete_category(user_id, category_id):
     if user_id == current_user.id:
+        user = User.query.get(user_id)
+
+        for recipe in user.recipes:
+            if recipe.category_id == category_id:
+                db.session.delete(recipe)
         category = Category.query.get(category_id)
         db.session.delete(category)
         db.session.commit()
@@ -232,7 +237,7 @@ def create_recipe(user_id, category_id):
         if form.validate_on_submit():
             new_recipe = Recipes(
                 name=form.name.data,
-                recipe_type=form.recipe_type.data,
+                recipe_type=form.recipe_type.data.title(),
                 img=form.img.data,
                 link=form.link.data,
                 ingredients=form.ingredients.data,
@@ -252,7 +257,6 @@ def create_recipe(user_id, category_id):
 def view_recipe(user_id, recipe_id):
     if user_id == current_user.id:
         recipe = Recipes.query.get(recipe_id)
-
         return render_template("view_recipe.html", user_id=user_id, recipe=recipe)
     else:
         abort(403)
@@ -276,12 +280,23 @@ def edit_recipe(user_id):
         if form.cancel.data:
             return redirect(url_for("view_recipe", user_id=user_id, recipe_id=recipe_id))
         if form.validate_on_submit():
+            if Category.query.filter_by(name=form.recipe_type.data.title()).first():
+                category = Category.query.filter_by(name=form.recipe_type.data.title()).first()
+            else:
+                category = Category(
+                    name=form.recipe_type.data.title(),
+                    user_id=user_id
+                )
+                db.session.add(category)
+                db.session.commit()
+
             recipe.name = form.name.data
             recipe.recipe_type = form.recipe_type.data
             recipe.img = form.img.data
             recipe.link = form.link.data
             recipe.ingredients = form.ingredients.data
             recipe.directions = form.directions.data
+            recipe.category_id = category.id
             db.session.commit()
             return redirect(url_for("view_recipe", user_id=user_id, recipe_id=recipe_id))
         return render_template(
