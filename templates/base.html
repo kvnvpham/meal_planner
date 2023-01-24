@@ -37,7 +37,7 @@
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     {% if current_user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" aria-current="page" href="#">Weekly Plan</a>
+                        <a class="nav-link" aria-current="page" href="{{ url_for('my_week', user_id=user_id) }}">Weekly Plan</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('my_recipes', user_id=user_id) }}">Recipes List</a>

@@ -197,10 +197,24 @@
     height: 25vmax;
 }
 
+.schedule-day {
+    padding: 0 50% 4% 0;
+}
+
 .recipe-content {
     padding-bottom: 4%;
 }
 
+.recipe-directions {
+    padding-top: 4%;
+}
+
 .modify-content {
     margin-top: 8%;
+}
+
+/* My Week */
+
+.day-recipes {
+    padding-bottom: 4%;
 }

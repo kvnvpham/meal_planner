@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, EmailField, PasswordField, SubmitField
+from wtforms import StringField, SelectField, EmailField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, Email, Length
 from flask_ckeditor import CKEditorField
 
@@ -26,7 +26,7 @@ class CreateCategory(FlaskForm):
 
 class RecipesForm(FlaskForm):
     name = StringField(label="Recipe Name", validators=[InputRequired()])
-    recipe_type = StringField(label="Recipe Type", validators=[InputRequired()], description="Food Category")
+    recipe_type = StringField(label="Recipe Category", validators=[InputRequired()], description="Food Category")
     img = StringField(label="Recipe Image", description="Embed Link")
     link = StringField(label="Website Link", validators=[InputRequired()])
     ingredients = CKEditorField(label="Ingredients", validators=[InputRequired()])
@@ -34,3 +34,10 @@ class RecipesForm(FlaskForm):
     submit = SubmitField(label="Submit")
     cancel = SubmitField(label="Cancel", render_kw={"formnovalidate": True})
 
+
+class AddToWeek(FlaskForm):
+    day = SelectField(
+        label="Assign Day:",
+        choices=["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    )
+    submit = SubmitField(label="Schedule")

@@ -4,9 +4,10 @@ from sqlalchemy.orm import relationship
 from flask_bootstrap import Bootstrap
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from forms import RegisterForm, LoginForm, CreateCategory, RecipesForm
+from forms import RegisterForm, LoginForm, CreateCategory, RecipesForm, AddToWeek
 from flask_ckeditor import CKEditor
 from datetime import date
+from bleach_text import Bleach
 
 
 app = Flask(__name__)
@@ -19,6 +20,7 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 Bootstrap(app)
 ckeditor = CKEditor(app)
+bleach_text = Bleach()
 
 
 class User(UserMixin, db.Model):
@@ -48,7 +50,7 @@ class Category(db.Model):
 class WeeklyMeal(db.Model):
     __tablename__ = "weekly_meal"
     id = db.Column(db.Integer, primary_key=True)
-    day_of_week = db.Column(db.String(250), unique=True, nullable=False)
+    day_of_week = db.Column(db.String(250), nullable=False)
 
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     user = relationship("User", back_populates="my_week")
@@ -153,6 +155,17 @@ def logout():
     return redirect(url_for("home"))
 
 
+@app.route("/my_week/<int:user_id>")
+@login_required
+def my_week(user_id):
+    if user_id == current_user.id:
+        user = User.query.get(user_id)
+
+        return render_template("my_week.html", user_id=user_id, user=user)
+    else:
+        abort(403)
+
+
 @app.route("/my_recipes/<int:user_id>")
 @login_required
 def my_recipes(user_id):
@@ -211,6 +224,7 @@ def edit_category(user_id, category_id):
 
 
 @app.route("/delete_category/<int:user_id>/<int:category_id>")
+@login_required
 def delete_category(user_id, category_id):
     if user_id == current_user.id:
         user = User.query.get(user_id)
@@ -235,13 +249,16 @@ def create_recipe(user_id, category_id):
         if form.cancel.data:
             return redirect(url_for("my_recipes", user_id=user_id))
         if form.validate_on_submit():
+            ingredients_text = bleach_text.clean_text(form.ingredients.data)
+            directions_text = bleach_text.clean_text(form.directions.data)
+
             new_recipe = Recipes(
                 name=form.name.data,
                 recipe_type=form.recipe_type.data.title(),
                 img=form.img.data,
                 link=form.link.data,
-                ingredients=form.ingredients.data,
-                directions=form.directions.data,
+                ingredients=ingredients_text,
+                directions=directions_text,
                 user_id=user_id,
                 category_id=category_id
             )
@@ -253,16 +270,34 @@ def create_recipe(user_id, category_id):
         abort(403)
 
 
-@app.route("/view_recipe/<int:user_id>/<recipe_id>")
+@app.route("/view_recipe/<int:user_id>/<recipe_id>", methods=["GET", "POST"])
+@login_required
 def view_recipe(user_id, recipe_id):
     if user_id == current_user.id:
+        form = AddToWeek()
         recipe = Recipes.query.get(recipe_id)
-        return render_template("view_recipe.html", user_id=user_id, recipe=recipe)
+
+        if form.validate_on_submit():
+            if WeeklyMeal.query.filter_by(day_of_week=form.day.data).first():
+                day = WeeklyMeal.query.filter_by(day_of_week=form.day.data).first()
+            else:
+                day = WeeklyMeal(
+                    day_of_week=form.day.data,
+                    user_id=user_id
+                )
+                db.session.add(day)
+                db.session.commit()
+
+            recipe.my_week_id = day.id
+            db.session.commit()
+            return redirect(url_for("view_recipe", user_id=user_id, form=form, recipe_id=recipe_id))
+        return render_template("view_recipe.html", user_id=user_id, form=form, recipe=recipe)
     else:
         abort(403)
 
 
 @app.route("/edit_recipe/<int:user_id>", methods=["GET", "POST"])
+@login_required
 def edit_recipe(user_id):
     if user_id == current_user.id:
         recipe_id = request.args.get("recipe_id")
@@ -290,12 +325,15 @@ def edit_recipe(user_id):
                 db.session.add(category)
                 db.session.commit()
 
+            ingredients_text = bleach_text.clean_text(form.ingredients.data)
+            directions_text = bleach_text.clean_text(form.directions.data)
+
             recipe.name = form.name.data
             recipe.recipe_type = form.recipe_type.data
             recipe.img = form.img.data
             recipe.link = form.link.data
-            recipe.ingredients = form.ingredients.data
-            recipe.directions = form.directions.data
+            recipe.ingredients = ingredients_text
+            recipe.directions = directions_text
             recipe.category_id = category.id
             db.session.commit()
             return redirect(url_for("view_recipe", user_id=user_id, recipe_id=recipe_id))
@@ -312,6 +350,7 @@ def edit_recipe(user_id):
 
 
 @app.route("/delete_recipe/<int:user_id>/<int:recipe_id>")
+@login_required
 def delete_recipe(user_id, recipe_id):
     if user_id == current_user.id:
         recipe = Recipes.query.get(recipe_id)
@@ -320,6 +359,7 @@ def delete_recipe(user_id, recipe_id):
         return redirect(url_for("my_recipes", user_id=user_id))
     else:
         abort(403)
+
 
 @app.context_processor
 def inj_copyright():
