@@ -19,31 +19,27 @@
     <section id="week-content">
         <div class="container-fluid section text-start">
             <div class="category-content">
+                {% if user.my_week.my_recipes %}
                 <span class="category-dropdown">
                     <div class="dropdown">
                         <button class="btn btn-dark dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             Day
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#Sunday">Sunday</a></li>
-                            <li><a class="dropdown-item" href="#Monday">Monday</a></li>
-                            <li><a class="dropdown-item" href="#Tuesaday">Tuesday</a></li>
-                            <li><a class="dropdown-item" href="#Wednesday">Wednesday</a></li>
-                            <li><a class="dropdown-item" href="#Thursday">Thursday</a></li>
-                            <li><a class="dropdown-item" href="#Friday">Friday</a></li>
-                            <li><a class="dropdown-item" href="#Saturday">Saturday</a></li>
+                            <li><a class="dropdown-item" href="#{{ user.my_week.day_of_week }}">{{ user.my_week.day_of_week }}</a></li>
                         </ul>
+
                     </div>
                 </span>
+                {% endif %}
             </div>
 
             <div class="day-content">
-                {% for recipe in user.recipes %}
-
-                {% if recipe.my_week.day_of_week == "Sunday" %}
+                {% for day in user.my_week %}
                 <div class="cat-control">
-                    <h3>Sunday</h3>
+                    <h3>{{ day }}</h3>
                 </div>
+                {% for recipe in day %}
                 <div class="day-recipes">
                     <div class="row">
                         <div class="col-lg-3 col-md-4">
@@ -58,129 +54,10 @@
                         </div>
                     </div>
                 </div>
-                {% endif %}
-
-                {% if recipe.my_week.day_of_week == "Monday" %}
-                <div class="cat-control">
-                    <h3>Monday</h3>
-                </div>
-                <div class="day-recipes">
-                    <div class="row">
-                        <div class="col-lg-3 col-md-4">
-                            <div class="card">
-                                <a href="{{ url_for('view_recipe', user_id=user_id, recipe_id=recipe.id) }}">
-                                    <img src="{{ recipe.img }}" class="card-img-top card-images" alt="recipe image">
-                                </a>
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ recipe.name }}</h5>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-
-                {% if recipe.my_week.day_of_week == "Tuesday" %}
-                <div class="cat-control">
-                    <h3>Tuesday</h3>
-                </div>
-                <div class="day-recipes">
-                    <div class="row">
-                        <div class="col-lg-3 col-md-4">
-                            <div class="card">
-                                <a href="{{ url_for('view_recipe', user_id=user_id, recipe_id=recipe.id) }}">
-                                    <img src="{{ recipe.img }}" class="card-img-top card-images" alt="recipe image">
-                                </a>
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ recipe.name }}</h5>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-
-                {% if recipe.my_week.day_of_week == "Wednesday" %}
-                <div class="cat-control">
-                    <h3>Wednesday</h3>
-                </div>
-                <div class="day-recipes">
-                    <div class="row">
-                        <div class="col-lg-3 col-md-4">
-                            <div class="card">
-                                <a href="{{ url_for('view_recipe', user_id=user_id, recipe_id=recipe.id) }}">
-                                    <img src="{{ recipe.img }}" class="card-img-top card-images" alt="recipe image">
-                                </a>
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ recipe.name }}</h5>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-
-                {% if recipe.my_week.day_of_week == "Thursday" %}
-                <div class="cat-control">
-                    <h3>Thursday</h3>
-                </div>
-                <div class="day-recipes">
-                    <div class="row">
-                        <div class="col-lg-3 col-md-4">
-                            <div class="card">
-                                <a href="{{ url_for('view_recipe', user_id=user_id, recipe_id=recipe.id) }}">
-                                    <img src="{{ recipe.img }}" class="card-img-top card-images" alt="recipe image">
-                                </a>
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ recipe.name }}</h5>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-
-                {% if recipe.my_week.day_of_week == "Friday" %}
-                <div class="cat-control">
-                    <h3>Friday</h3>
-                </div>
-                <div class="day-recipes">
-                    <div class="row">
-                        <div class="col-lg-3 col-md-4">
-                            <div class="card">
-                                <a href="{{ url_for('view_recipe', user_id=user_id, recipe_id=recipe.id) }}">
-                                    <img src="{{ recipe.img }}" class="card-img-top card-images" alt="recipe image">
-                                </a>
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ recipe.name }}</h5>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-
-                {% if recipe.my_week.day_of_week == "Saturday" %}
-                <div class="cat-control">
-                    <h3>Saturday</h3>
-                </div>
-                <div class="day-recipes">
-                    <div class="row">
-                        <div class="col-lg-3 col-md-4">
-                            <div class="card">
-                                <a href="{{ url_for('view_recipe', user_id=user_id, recipe_id=recipe.id) }}">
-                                    <img src="{{ recipe.img }}" class="card-img-top card-images" alt="recipe image">
-                                </a>
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ recipe.name }}</h5>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
+                {% endfor %}
                 {% endfor %}
             </div>
+        </div>
     </section>
 
 {% endblock %}

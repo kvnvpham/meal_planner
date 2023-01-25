@@ -38,6 +38,6 @@ class RecipesForm(FlaskForm):
 class AddToWeek(FlaskForm):
     day = SelectField(
         label="Assign Day:",
-        choices=["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        choices=["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
     )
     submit = SubmitField(label="Schedule")
