@@ -19,29 +19,30 @@
     <section id="week-content">
         <div class="container-fluid section text-start">
             <div class="category-content">
-                {% if user.my_week.my_recipes %}
+                <span class="create-category"><a href="{{ url_for('random_recipe', user_id=user_id) }}" class="btn btn-dark">Create Category</a></span>
+
                 <span class="category-dropdown">
                     <div class="dropdown">
                         <button class="btn btn-dark dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             Day
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#{{ user.my_week.day_of_week }}">{{ user.my_week.day_of_week }}</a></li>
+                            {% for day in user.my_week %}
+                            <li><a class="dropdown-item" href="#{{ day.day_of_week }}">{{ day.day_of_week }}</a></li>
+                            {% endfor %}
                         </ul>
-
                     </div>
                 </span>
-                {% endif %}
             </div>
 
             <div class="day-content">
                 {% for day in user.my_week %}
-                <div class="cat-control">
-                    <h3>{{ day }}</h3>
+                <div class="cat-control" id="{{ day.day_of_week }}">
+                    <h3>{{ day.day_of_week }}</h3>
                 </div>
-                {% for recipe in day %}
                 <div class="day-recipes">
                     <div class="row">
+                        {% for recipe in day.my_recipes %}
                         <div class="col-lg-3 col-md-4">
                             <div class="card">
                                 <a href="{{ url_for('view_recipe', user_id=user_id, recipe_id=recipe.id) }}">
@@ -52,9 +53,9 @@
                                 </div>
                             </div>
                         </div>
+                        {% endfor %}
                     </div>
                 </div>
-                {% endfor %}
                 {% endfor %}
             </div>
         </div>

@@ -215,6 +215,10 @@
 
 /* My Week */
 
+.day-content {
+    padding-top: 4%;
+}
+
 .day-recipes {
     padding-bottom: 4%;
 }

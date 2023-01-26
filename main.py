@@ -1,16 +1,14 @@
 from flask import Flask, render_template, redirect, request, url_for, flash, abort
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
-from sqlalchemy import event
 from flask_bootstrap import Bootstrap
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from forms import RegisterForm, LoginForm, CreateCategory, RecipesForm, AddToWeek
 from flask_ckeditor import CKEditor
 from datetime import date
+import random
 from bleach_text import Bleach
-
-
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "super secret"
@@ -34,8 +32,6 @@ class User(UserMixin, db.Model):
 
     food_categories = relationship("Category", back_populates="user")
     recipes = relationship("Recipes", back_populates="user")
-
-    week_id = db.Column(db.Integer, db.ForeignKey("weekly_meal.id"))
     my_week = relationship("WeeklyMeal", back_populates="user")
 
 
@@ -54,8 +50,9 @@ class Category(db.Model):
 class WeeklyMeal(db.Model):
     __tablename__ = "weekly_meal"
     id = db.Column(db.Integer, primary_key=True)
-    day_of_week = db.Column(db.String(250), unique=True, nullable=False)
+    day_of_week = db.Column(db.String(250), nullable=False)
 
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     user = relationship("User", back_populates="my_week")
     my_recipes = relationship("Recipes", back_populates="my_week")
 
@@ -91,20 +88,18 @@ class Ingredients(db.Model):
     recipe = relationship("Recipes", back_populates="ingredient")
 
 
+@db.event.listens_for(User, "after_insert")
+def insert_day(mapper, connection, target):
+    week = WeeklyMeal.__table__
+
+    days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    for day in days:
+        connection.execute(week.insert().values(day_of_week=day,
+                                                user_id=target.id))
+
+
 with app.app_context():
     db.create_all()
-
-
-@db.event.listens_for(WeeklyMeal, 'after_insert')
-def create_days(*args, **kwargs):
-    days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", ""]
-
-    for day in days:
-        week = WeeklyMeal(
-            day_of_week=day
-        )
-        db.session.add(week)
-    db.session.commit()
 
 
 @login_manager.user_loader
@@ -289,15 +284,17 @@ def create_recipe(user_id, category_id):
 @login_required
 def view_recipe(user_id, recipe_id):
     if user_id == current_user.id:
-        user = User.query.get(user_id)
         form = AddToWeek()
         recipe = Recipes.query.get(recipe_id)
 
         if form.validate_on_submit():
-            day = WeeklyMeal.query.filter_by(day_of_week=form.day.data).first()
-            user.week_id = day.id
-            recipe.my_week_id = day.id
+            if form.day.data and form.day.data != "Not Scheduled":
+                day = WeeklyMeal.query.filter_by(day_of_week=form.day.data, user_id=user_id).first()
+                recipe.my_week_id = day.id
+            else:
+                recipe.my_week_id = None
             db.session.commit()
+
             return redirect(url_for("view_recipe", user_id=user_id, form=form, recipe_id=recipe_id))
         return render_template("view_recipe.html", user_id=user_id, form=form, recipe=recipe)
     else:
