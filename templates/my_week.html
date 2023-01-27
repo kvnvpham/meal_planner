@@ -19,7 +19,7 @@
     <section id="week-content">
         <div class="container-fluid section text-start">
             <div class="category-content">
-                <span class="create-category"><a href="{{ url_for('random_recipe', user_id=user_id) }}" class="btn btn-dark">Create Category</a></span>
+                <span class="create-category"><a href="{{ url_for('random_recipe', user_id=user_id) }}" class="btn btn-dark">Generate Random Recipe</a></span>
 
                 <span class="category-dropdown">
                     <div class="dropdown">
@@ -34,6 +34,23 @@
                     </div>
                 </span>
             </div>
+
+            {% if random %}
+            <div class="day-content">
+                <div class="row">
+                    <div class="col-lg-3 col-md-4">
+                        <div class="card">
+                            <a href="{{ url_for('view_recipe', user_id=user_id, recipe_id=random.id) }}">
+                                <img src="{{ random.img }}" class="card-img-top card-images" alt="recipe image">
+                            </a>
+                            <div class="card-body">
+                                <h5 class="card-title">{{ random.name }}</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
 
             <div class="day-content">
                 {% for day in user.my_week %}

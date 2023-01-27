@@ -175,6 +175,16 @@ def my_week(user_id):
         abort(403)
 
 
+@app.route("/random_recipe/<int:user_id>")
+@login_required
+def random_recipe(user_id):
+    user = User.query.get(user_id)
+
+    rand = random.choice(user.recipes)
+    recipe = Recipes.query.get(rand.id)
+    return render_template("my_week.html", user_id=user_id, user=user, random=recipe)
+
+
 @app.route("/my_recipes/<int:user_id>")
 @login_required
 def my_recipes(user_id):
