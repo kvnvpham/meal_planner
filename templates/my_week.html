@@ -19,7 +19,9 @@
     <section id="week-content">
         <div class="container-fluid section text-start">
             <div class="category-content">
+                {% if user.recipes %}
                 <span class="create-category"><a href="{{ url_for('random_recipe', user_id=user_id) }}" class="btn btn-dark">Generate Random Recipe</a></span>
+                {% endif %}
 
                 <span class="category-dropdown">
                     <div class="dropdown">
