@@ -4,14 +4,19 @@ from sqlalchemy.orm import relationship
 from flask_bootstrap import Bootstrap
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from forms import RegisterForm, LoginForm, CreateCategory, RecipesForm, AddToWeek
+from werkzeug.utils import secure_filename
+from forms import RegisterForm, LoginForm, CreateCategory, RecipesForm, AddToWeek, UploadForm
 from flask_ckeditor import CKEditor
 from datetime import date
 import random
+import os
 from bleach_text import Bleach
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "super secret"
+
+# UPLOAD_FOLDER = "static/files"
+# app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///meals.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -374,6 +379,17 @@ def delete_recipe(user_id, recipe_id):
         return redirect(url_for("my_recipes", user_id=user_id))
     else:
         abort(403)
+
+
+@app.route("/my_ingredients/<int:user_id>")
+def my_ingredients(user_id):
+    form = UploadForm()
+
+    file = form.csv.data
+    filename = secure_filename(file.filename)
+    # path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    # file.save(path)
+    return
 
 
 @app.context_processor

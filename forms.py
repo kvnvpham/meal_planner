@@ -1,4 +1,5 @@
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms import StringField, SelectField, EmailField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, Email, Length
 from flask_ckeditor import CKEditorField
@@ -41,3 +42,11 @@ class AddToWeek(FlaskForm):
         choices=["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Not Scheduled"]
     )
     submit = SubmitField(label="Schedule")
+
+
+class UploadForm(FlaskForm):
+    csv = FileField(
+        label="CSV File",
+        validators=[FileRequired(), FileAllowed(['csv'], "CSV Files Only")]
+    )
+    submit = SubmitField(label="Upload")
