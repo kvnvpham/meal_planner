@@ -7,6 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from forms import RegisterForm, LoginForm, CreateCategory, RecipesForm, AddToWeek, UploadForm
 from flask_ckeditor import CKEditor
+from ingredient_trie import Trie
 from datetime import date
 import random
 import os
