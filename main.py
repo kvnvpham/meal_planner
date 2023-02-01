@@ -82,6 +82,7 @@ class Recipes(db.Model):
     my_week_id = db.Column(db.Integer, db.ForeignKey("weekly_meal.id"))
     my_week = relationship("WeeklyMeal", back_populates="my_recipes")
 
+    ingredient_id = db.Column(db.Integer, db.ForeignKey("ingredients.id"))
     ingredient = relationship("Ingredients", back_populates="recipe")
 
 
@@ -90,7 +91,6 @@ class Ingredients(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(500), nullable=False)
 
-    recipe_id = db.Column(db.Integer, db.ForeignKey("recipes.id"))
     recipe = relationship("Recipes", back_populates="ingredient")
 
 
