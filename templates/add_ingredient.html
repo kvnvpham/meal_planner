@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %}Recipe{% endblock %}
+
+{% block main %}
+
+    <section class="cat-recipes-title">
+        <div class="container-fluid cat-bg banner-pad text-start">
+            <h2>Ingredient</h2>
+        </div>
+    </section>
+
+    <section id="cat-recipes-form">
+        <div class="container-fluid">
+            <div class="form-section">
+                <form action="{{ url_for('add_ingredient', user_id=user_id) }}" method="post" novalidate>
+                    {{ form.csrf_token }}
+                    {{ form.name.label(class='form-label') }}
+                    {{ form.name(class='form-control', placeholder=form.name.description) }}
+                    {{ form.submit(class='btn btn-dark create-btn') }} {{ form.cancel(class='btn btn-dark create-btn') }}
+                </form>
+            </div>
+        </div>
+    </section>
+
+{% endblock %}

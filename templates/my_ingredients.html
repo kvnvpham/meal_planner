@@ -19,7 +19,15 @@
 
     <section id="ingredients-body">
         <div class="container-fluid section text-start">
+            <span class="create-category"><a href="{{ url_for('add_ingredient', user_id=user_id) }}" class="btn btn-dark">Add Ingredient</a></span>
+        </div>
 
+        <div class="ingredients-list section">
+            <ul>
+                {% for ingredient in user.ingredients %}
+                <li>{{ ingredient.name }}</li>
+                {% endfor %}
+            </ul>
         </div>
     </section>
 {% endblock %}

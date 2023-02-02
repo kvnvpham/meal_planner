@@ -5,7 +5,7 @@ from flask_bootstrap import Bootstrap
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from forms import RegisterForm, LoginForm, CreateCategory, RecipesForm, AddToWeek, UploadForm
+from forms import RegisterForm, LoginForm, CreateCategory, RecipesForm, AddToWeek, AddIngredient, UploadForm
 from flask_ckeditor import CKEditor
 from ingredient_trie import Trie
 from datetime import date
@@ -23,6 +23,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///meals.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
+trie = Trie()
 login_manager = LoginManager(app)
 Bootstrap(app)
 ckeditor = CKEditor(app)
@@ -39,6 +40,7 @@ class User(UserMixin, db.Model):
     food_categories = relationship("Category", back_populates="user")
     recipes = relationship("Recipes", back_populates="user")
     my_week = relationship("WeeklyMeal", back_populates="user")
+    ingredients = relationship("Ingredients", back_populates="user")
 
 
 class Category(db.Model):
@@ -92,6 +94,9 @@ class Ingredients(db.Model):
     name = db.Column(db.String(500), nullable=False)
 
     recipe = relationship("Recipes", back_populates="ingredient")
+
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    user = relationship("User", back_populates="ingredients")
 
 
 @db.event.listens_for(User, "after_insert")
@@ -384,13 +389,35 @@ def delete_recipe(user_id, recipe_id):
 
 @app.route("/my_ingredients/<int:user_id>")
 def my_ingredients(user_id):
-    form = UploadForm()
+    if user_id == current_user.id:
+        user = User.query.get(user_id)
 
-    file = form.csv.data
-    filename = secure_filename(file.filename)
-    # path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    # file.save(path)
-    return
+        return render_template("my_ingredients.html", user_id=user_id, user=user)
+    else:
+        abort(403)
+
+
+@app.route("/add_ingredient/<int:user_id>", methods=['GET', "POST"])
+def add_ingredient(user_id):
+    if user_id == current_user.id:
+        form = AddIngredient()
+
+        if form.cancel.data:
+            return redirect(url_for("my_ingredients", user_id=user_id))
+        if form.validate_on_submit():
+            trie.add_word(form.name.data)
+
+            ingredient = Ingredients(
+                name=form.name.data,
+                user_id=user_id
+            )
+            db.session.add(ingredient)
+            db.session.commit()
+            return redirect(url_for("my_ingredients", user_id=user_id))
+
+        return render_template("add_ingredient.html", user_id=user_id, form=form)
+    else:
+        abort(403)
 
 
 @app.context_processor

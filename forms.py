@@ -44,6 +44,14 @@ class AddToWeek(FlaskForm):
     submit = SubmitField(label="Schedule")
 
 
+class AddIngredient(FlaskForm):
+    name = StringField(label="Ingredient Name",
+                       validators=[InputRequired()],
+                       description="Input multi-word named ingredients connected with '-'")
+    submit = SubmitField(label="Add")
+    cancel = SubmitField(label="Cancel")
+
+
 class UploadForm(FlaskForm):
     csv = FileField(
         label="CSV File",
