@@ -36,6 +36,11 @@
             <div class="collapse navbar-collapse" id="navBarContent">
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     {% if current_user.is_authenticated %}
+                    {% if current_user.id == 1 %}
+                    <li class="nav-item">
+                        <a class="nav-link" aria-current="page" href="{{ url_for('ingredient_library', user_id=user_id) }}">Ingredient Library</a>
+                    </li>
+                    {% endif %}
                     <li class="nav-item">
                         <a class="nav-link" aria-current="page" href="{{ url_for('my_week', user_id=user_id) }}">Weekly Plan</a>
                     </li>

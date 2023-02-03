@@ -1,4 +1,5 @@
 from flask import Flask, render_template, redirect, request, url_for, flash, abort
+from functools import wraps
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
 from flask_bootstrap import Bootstrap
@@ -10,6 +11,7 @@ from flask_ckeditor import CKEditor
 from ingredient_trie import Trie
 from datetime import date
 import random
+import html
 import os
 from bleach_text import Bleach
 
@@ -118,6 +120,15 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
+def admin_only(f):
+    @wraps(f)
+    def decorator(*args, **kwargs):
+        if current_user.id != 1:
+            abort(403)
+        return f(*args, **kwargs)
+    return decorator
+
+
 @app.route("/")
 def home():
     if not current_user.is_authenticated:
@@ -173,6 +184,19 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for("home"))
+
+
+@app.route("/ingredient_library/<int:user_id>", methods=['GET', 'POST'])
+@admin_only
+def ingredient_library(user_id):
+    form = AddIngredient()
+
+    if form.cancel.data:
+        return redirect(url_for("home", user_id=user_id))
+    if form.validate_on_submit():
+        Trie.add_word(form.name.data.title())
+        return redirect(url_for("home", user_id=user_id))
+    return render_template("add_ingredient.html", user_id=user_id, form=form, admin=True)
 
 
 @app.route("/my_week/<int:user_id>")
@@ -388,6 +412,7 @@ def delete_recipe(user_id, recipe_id):
 
 
 @app.route("/my_ingredients/<int:user_id>")
+@login_required
 def my_ingredients(user_id):
     if user_id == current_user.id:
         user = User.query.get(user_id)
@@ -398,6 +423,7 @@ def my_ingredients(user_id):
 
 
 @app.route("/add_ingredient/<int:user_id>", methods=['GET', "POST"])
+@login_required
 def add_ingredient(user_id):
     if user_id == current_user.id:
         form = AddIngredient()
@@ -405,17 +431,15 @@ def add_ingredient(user_id):
         if form.cancel.data:
             return redirect(url_for("my_ingredients", user_id=user_id))
         if form.validate_on_submit():
-            trie.add_word(form.name.data)
-
             ingredient = Ingredients(
-                name=form.name.data,
+                name=form.name.data.title(),
                 user_id=user_id
             )
             db.session.add(ingredient)
             db.session.commit()
             return redirect(url_for("my_ingredients", user_id=user_id))
 
-        return render_template("add_ingredient.html", user_id=user_id, form=form)
+        return render_template("add_ingredient.html", user_id=user_id, form=form, admin=False)
     else:
         abort(403)
 
