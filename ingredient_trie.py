@@ -17,6 +17,15 @@ class Trie:
             cur = cur.children[c]
         cur.is_word = True
 
+    def get_prefix(self, word):
+        cur = self.root
+
+        for c in word:
+            if c not in cur.children:
+                return False
+            cur = cur.children[c]
+        return True
+
     def search(self, word):
         cur = self.root
 
