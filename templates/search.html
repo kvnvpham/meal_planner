@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}My Ingredients{% endblock %}
+
+{% block main %}
+
+    <section id="search-title">
+        <div class="container-fluid recipes-bg banner-pad text-start">
+            <div>
+                <h2>Search</h2>
+            </div>
+        </div>
+        <div class="back-to-top">
+            <a href="#search-title" class="btn top-btn" title="Back to top">
+                <i class="fa-solid fa-angle-up"></i>
+            </a>
+        </div>
+    </section>
+
+    <section id="search-body">
+        <div class="container-fluid section">
+            <div class="search-content">
+                <form action="{{ url_for('search', user_id=user_id) }}" method="post" novalidate>
+                    {{ form.csrf_token }}
+                    {{ form.recipe.label(class='form-label') }}
+                    {{ form.recipe(class='form-control') }} {{ form.submit(class='btn btn-dark create-btn') }}
+                </form>
+            </div>
+
+            {% if results %}
+            <div>
+                {% for item in results %}
+                <a href="{{ url_for('get_recipe_info', user_id=user_id, search_id=item.id) }}"><h5>{{ item.title }}</h5></a>
+                <img src="{{ item.image }}">
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

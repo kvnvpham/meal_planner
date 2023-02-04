@@ -1,5 +1,4 @@
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms import StringField, SelectField, EmailField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, Email, Length
 from flask_ckeditor import CKEditorField
@@ -52,9 +51,6 @@ class AddIngredient(FlaskForm):
     cancel = SubmitField(label="Cancel")
 
 
-class UploadForm(FlaskForm):
-    csv = FileField(
-        label="CSV File",
-        validators=[FileRequired(), FileAllowed(['csv'], "CSV Files Only")]
-    )
-    submit = SubmitField(label="Upload")
+class SearchRecipe(FlaskForm):
+    recipe = StringField(label="Search Recipe", validators=[InputRequired()])
+    submit = SubmitField(label="Search")

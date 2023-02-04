@@ -5,27 +5,26 @@ from sqlalchemy.orm import relationship
 from flask_bootstrap import Bootstrap
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
-from forms import RegisterForm, LoginForm, CreateCategory, RecipesForm, AddToWeek, AddIngredient, UploadForm
+from forms import RegisterForm, LoginForm, CreateCategory, RecipesForm, AddToWeek, AddIngredient, SearchRecipe
 from flask_ckeditor import CKEditor
 from ingredient_trie import Trie
+from recipe_api import RecipeLibrary
 from datetime import date
 import random
-import html
 import os
 from bleach_text import Bleach
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "super secret"
 
-# UPLOAD_FOLDER = "static/files"
-# app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///meals.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 trie = Trie()
+library = RecipeLibrary()
+library.key = os.environ.get("SPOON_API")
+
 login_manager = LoginManager(app)
 Bootstrap(app)
 ckeditor = CKEditor(app)
@@ -129,6 +128,15 @@ def admin_only(f):
     return decorator
 
 
+def correct_user(f):
+    @wraps(f)
+    def decorator(*args, **kwargs):
+        if kwargs["user_id"] != current_user.id:
+            abort(403)
+        return f(*args, **kwargs)
+    return decorator
+
+
 @app.route("/")
 def home():
     if not current_user.is_authenticated:
@@ -201,17 +209,16 @@ def ingredient_library(user_id):
 
 @app.route("/my_week/<int:user_id>")
 @login_required
+@correct_user
 def my_week(user_id):
-    if user_id == current_user.id:
-        user = User.query.get(user_id)
+    user = User.query.get(user_id)
 
-        return render_template("my_week.html", user_id=user_id, user=user)
-    else:
-        abort(403)
+    return render_template("my_week.html", user_id=user_id, user=user)
 
 
 @app.route("/random_recipe/<int:user_id>")
 @login_required
+@correct_user
 def random_recipe(user_id):
     user = User.query.get(user_id)
 
@@ -222,226 +229,229 @@ def random_recipe(user_id):
 
 @app.route("/my_recipes/<int:user_id>")
 @login_required
+@correct_user
 def my_recipes(user_id):
-    if user_id == current_user.id:
-        user = User.query.get(user_id)
+    user = User.query.get(user_id)
 
-        return render_template("my_recipes.html", user_id=current_user.id, user=user)
-    else:
-        abort(403)
+    return render_template("my_recipes.html", user_id=current_user.id, user=user)
 
 
 @app.route("/create_category/<int:user_id>", methods=["GET", "POST"])
 @login_required
+@correct_user
 def create_category(user_id):
-    if user_id == current_user.id:
-        form = CreateCategory()
+    form = CreateCategory()
 
-        if form.cancel.data:
-            return redirect(url_for("my_recipes", user_id=user_id))
-        if form.validate_on_submit():
-            new_cat = Category(
-                name=form.name.data.title(),
-                icon_img=form.icon_img.data,
-                user_id=user_id
-            )
-            db.session.add(new_cat)
-            db.session.commit()
-            return redirect(url_for("my_recipes", user_id=user_id))
-        return render_template("create_category.html", form=form, user_id=user_id)
-    else:
-        abort(403)
+    if form.cancel.data:
+        return redirect(url_for("my_recipes", user_id=user_id))
+    if form.validate_on_submit():
+        new_cat = Category(
+            name=form.name.data.title(),
+            icon_img=form.icon_img.data,
+            user_id=user_id
+        )
+        db.session.add(new_cat)
+        db.session.commit()
+        return redirect(url_for("my_recipes", user_id=user_id))
+    return render_template("create_category.html", form=form, user_id=user_id)
 
 
 @app.route("/edit_category/<int:user_id>/<int:category_id>", methods=["GET", "POST"])
 @login_required
+@correct_user
 def edit_category(user_id, category_id):
-    if user_id == current_user.id:
-        category_info = Category.query.get(category_id)
+    category_info = Category.query.get(category_id)
 
-        form = CreateCategory(
-            name=category_info.name,
-            icon_img=category_info.icon_img
-        )
-        if form.validate_on_submit():
-            if form.cancel.data:
-                return redirect(url_for("my_recipes", user_id=user_id))
-
-            category_info.name = form.name.data.title()
-            category_info.icon_img = form.icon_img.data
-            db.session.commit()
+    form = CreateCategory(
+        name=category_info.name,
+        icon_img=category_info.icon_img
+    )
+    if form.validate_on_submit():
+        if form.cancel.data:
             return redirect(url_for("my_recipes", user_id=user_id))
 
-        return render_template("create_category.html", form=form, user_id=user_id, category_id=category_id)
-    else:
-        abort(403)
+        category_info.name = form.name.data.title()
+        category_info.icon_img = form.icon_img.data
+        db.session.commit()
+        return redirect(url_for("my_recipes", user_id=user_id))
+
+    return render_template("create_category.html", form=form, user_id=user_id, category_id=category_id)
 
 
 @app.route("/delete_category/<int:user_id>/<int:category_id>")
 @login_required
+@correct_user
 def delete_category(user_id, category_id):
-    if user_id == current_user.id:
-        user = User.query.get(user_id)
+    user = User.query.get(user_id)
 
-        for recipe in user.recipes:
-            if recipe.category_id == category_id:
-                db.session.delete(recipe)
-        category = Category.query.get(category_id)
-        db.session.delete(category)
-        db.session.commit()
-        return redirect(url_for("my_recipes", user_id=user_id))
-    else:
-        abort(403)
+    for recipe in user.recipes:
+        if recipe.category_id == category_id:
+            db.session.delete(recipe)
+    category = Category.query.get(category_id)
+    db.session.delete(category)
+    db.session.commit()
+    return redirect(url_for("my_recipes", user_id=user_id))
 
 
 @app.route("/create_recipe/<int:user_id>/<int:category_id>", methods=["GET", "POST"])
 @login_required
+@correct_user
 def create_recipe(user_id, category_id):
-    if user_id == current_user.id:
-        category = Category.query.get(category_id)
-        form = RecipesForm(recipe_type=category.name)
+    category = Category.query.get(category_id)
+    form = RecipesForm(recipe_type=category.name)
 
-        if form.cancel.data:
-            return redirect(url_for("my_recipes", user_id=user_id))
-        if form.validate_on_submit():
-            ingredients_text = bleach_text.clean_text(form.ingredients.data)
-            directions_text = bleach_text.clean_text(form.directions.data)
+    if form.cancel.data:
+        return redirect(url_for("my_recipes", user_id=user_id))
+    if form.validate_on_submit():
+        ingredients_text = bleach_text.clean_text(form.ingredients.data)
+        directions_text = bleach_text.clean_text(form.directions.data)
 
-            new_recipe = Recipes(
-                name=form.name.data,
-                recipe_type=form.recipe_type.data.title(),
-                img=form.img.data,
-                link=form.link.data,
-                ingredients=ingredients_text,
-                directions=directions_text,
-                user_id=user_id,
-                category_id=category_id
-            )
-            db.session.add(new_recipe)
-            db.session.commit()
-            return redirect(url_for("my_recipes", user_id=user_id))
-        return render_template("create_recipe.html", form=form, user_id=current_user.id, category_id=category_id)
-    else:
-        abort(403)
+        new_recipe = Recipes(
+            name=form.name.data,
+            recipe_type=form.recipe_type.data.title(),
+            img=form.img.data,
+            link=form.link.data,
+            ingredients=ingredients_text,
+            directions=directions_text,
+            user_id=user_id,
+            category_id=category_id
+        )
+        db.session.add(new_recipe)
+        db.session.commit()
+        return redirect(url_for("my_recipes", user_id=user_id))
+    return render_template("create_recipe.html", form=form, user_id=current_user.id, category_id=category_id)
 
 
 @app.route("/view_recipe/<int:user_id>/<recipe_id>", methods=["GET", "POST"])
 @login_required
+@correct_user
 def view_recipe(user_id, recipe_id):
-    if user_id == current_user.id:
-        form = AddToWeek()
-        recipe = Recipes.query.get(recipe_id)
+    form = AddToWeek()
+    recipe = Recipes.query.get(recipe_id)
 
-        if form.validate_on_submit():
-            if form.day.data and form.day.data != "Not Scheduled":
-                day = WeeklyMeal.query.filter_by(day_of_week=form.day.data, user_id=user_id).first()
-                recipe.my_week_id = day.id
-            else:
-                recipe.my_week_id = None
-            db.session.commit()
+    if form.validate_on_submit():
+        if form.day.data and form.day.data != "Not Scheduled":
+            day = WeeklyMeal.query.filter_by(day_of_week=form.day.data, user_id=user_id).first()
+            recipe.my_week_id = day.id
+        else:
+            recipe.my_week_id = None
+        db.session.commit()
 
-            return redirect(url_for("view_recipe", user_id=user_id, form=form, recipe_id=recipe_id))
-        return render_template("view_recipe.html", user_id=user_id, form=form, recipe=recipe)
-    else:
-        abort(403)
+        return redirect(url_for("view_recipe", user_id=user_id, form=form, recipe_id=recipe_id))
+    return render_template("view_recipe.html", user_id=user_id, form=form, recipe=recipe)
 
 
 @app.route("/edit_recipe/<int:user_id>", methods=["GET", "POST"])
 @login_required
+@correct_user
 def edit_recipe(user_id):
-    if user_id == current_user.id:
-        recipe_id = request.args.get("recipe_id")
-        recipe = Recipes.query.get(recipe_id)
+    recipe_id = request.args.get("recipe_id")
+    recipe = Recipes.query.get(recipe_id)
 
-        form = RecipesForm(
-            name=recipe.name,
-            recipe_type=recipe.recipe_type,
-            img=recipe.img,
-            link=recipe.link,
-            ingredients=recipe.ingredients,
-            directions=recipe.directions
-        )
+    form = RecipesForm(
+        name=recipe.name,
+        recipe_type=recipe.recipe_type,
+        img=recipe.img,
+        link=recipe.link,
+        ingredients=recipe.ingredients,
+        directions=recipe.directions
+    )
 
-        if form.cancel.data:
-            return redirect(url_for("view_recipe", user_id=user_id, recipe_id=recipe_id))
-        if form.validate_on_submit():
-            if Category.query.filter_by(name=form.recipe_type.data.title()).first():
-                category = Category.query.filter_by(name=form.recipe_type.data.title()).first()
-            else:
-                category = Category(
-                    name=form.recipe_type.data.title(),
-                    user_id=user_id
-                )
-                db.session.add(category)
-                db.session.commit()
-
-            ingredients_text = bleach_text.clean_text(form.ingredients.data)
-            directions_text = bleach_text.clean_text(form.directions.data)
-
-            recipe.name = form.name.data
-            recipe.recipe_type = form.recipe_type.data
-            recipe.img = form.img.data
-            recipe.link = form.link.data
-            recipe.ingredients = ingredients_text
-            recipe.directions = directions_text
-            recipe.category_id = category.id
+    if form.cancel.data:
+        return redirect(url_for("view_recipe", user_id=user_id, recipe_id=recipe_id))
+    if form.validate_on_submit():
+        if Category.query.filter_by(name=form.recipe_type.data.title()).first():
+            category = Category.query.filter_by(name=form.recipe_type.data.title()).first()
+        else:
+            category = Category(
+                name=form.recipe_type.data.title(),
+                user_id=user_id
+            )
+            db.session.add(category)
             db.session.commit()
-            return redirect(url_for("view_recipe", user_id=user_id, recipe_id=recipe_id))
-        return render_template(
-            "create_recipe.html",
-            user_id=user_id,
-            form=form,
-            category_id=recipe.category_id,
-            recipe_id=recipe_id,
-            edit=True
-        )
-    else:
-        abort(403)
+
+        ingredients_text = bleach_text.clean_text(form.ingredients.data)
+        directions_text = bleach_text.clean_text(form.directions.data)
+
+        recipe.name = form.name.data
+        recipe.recipe_type = form.recipe_type.data
+        recipe.img = form.img.data
+        recipe.link = form.link.data
+        recipe.ingredients = ingredients_text
+        recipe.directions = directions_text
+        recipe.category_id = category.id
+        db.session.commit()
+        return redirect(url_for("view_recipe", user_id=user_id, recipe_id=recipe_id))
+    return render_template("create_recipe.html",
+                           user_id=user_id,
+                           form=form,
+                           category_id=recipe.category_id,
+                           recipe_id=recipe_id,
+                           edit=True)
 
 
 @app.route("/delete_recipe/<int:user_id>/<int:recipe_id>")
 @login_required
+@correct_user
 def delete_recipe(user_id, recipe_id):
-    if user_id == current_user.id:
-        recipe = Recipes.query.get(recipe_id)
-        db.session.delete(recipe)
-        db.session.commit()
-        return redirect(url_for("my_recipes", user_id=user_id))
-    else:
-        abort(403)
+    recipe = Recipes.query.get(recipe_id)
+    db.session.delete(recipe)
+    db.session.commit()
+    return redirect(url_for("my_recipes", user_id=user_id))
 
 
 @app.route("/my_ingredients/<int:user_id>")
 @login_required
+@correct_user
 def my_ingredients(user_id):
-    if user_id == current_user.id:
-        user = User.query.get(user_id)
+    user = User.query.get(user_id)
 
-        return render_template("my_ingredients.html", user_id=user_id, user=user)
-    else:
-        abort(403)
+    return render_template("my_ingredients.html", user_id=user_id, user=user)
 
 
 @app.route("/add_ingredient/<int:user_id>", methods=['GET', "POST"])
 @login_required
+@correct_user
 def add_ingredient(user_id):
-    if user_id == current_user.id:
-        form = AddIngredient()
+    form = AddIngredient()
 
-        if form.cancel.data:
-            return redirect(url_for("my_ingredients", user_id=user_id))
-        if form.validate_on_submit():
-            ingredient = Ingredients(
-                name=form.name.data.title(),
-                user_id=user_id
-            )
-            db.session.add(ingredient)
-            db.session.commit()
-            return redirect(url_for("my_ingredients", user_id=user_id))
+    if form.cancel.data:
+        return redirect(url_for("my_ingredients", user_id=user_id))
+    if form.validate_on_submit():
+        ingredient = Ingredients(
+            name=form.name.data.title(),
+            user_id=user_id
+        )
+        db.session.add(ingredient)
+        db.session.commit()
+        return redirect(url_for("my_ingredients", user_id=user_id))
 
-        return render_template("add_ingredient.html", user_id=user_id, form=form, admin=False)
-    else:
-        abort(403)
+    return render_template("add_ingredient.html", user_id=user_id, form=form, admin=False)
+
+
+@app.route("/search/<int:user_id>", methods=['GET', 'POST'])
+@login_required
+@correct_user
+def search(user_id):
+    form = SearchRecipe()
+
+    if form.validate_on_submit():
+        response = library.search_recipe_id(form.recipe.data)
+
+        for item in response['results']:
+            print(item['id'])
+
+        return render_template("search.html", user_id=user_id, form=form, results=response["results"])
+    return render_template("search.html", user_id=user_id, form=form)
+
+
+@app.route("/search_id/<int:user_id>/<int:search_id>", methods=['GET', 'POST'])
+@login_required
+@correct_user
+def get_recipe_info(user_id, search_id):
+    result = library.get_recipe(search_id)
+
+    return render_template("recipe_information.html", user_id=user_id, search_id=search_id, result=result)
 
 
 @app.context_processor
