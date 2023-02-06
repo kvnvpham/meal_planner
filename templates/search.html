@@ -29,10 +29,20 @@
 
             {% if results %}
             <div>
-                {% for item in results %}
-                <a href="{{ url_for('get_recipe_info', user_id=user_id, search_id=item.id) }}"><h5>{{ item.title }}</h5></a>
-                <img src="{{ item.image }}">
-                {% endfor %}
+                <div class="row">
+                    {% for item in results %}
+                    <div class="col-lg-3 col-md-3">
+                        <div class="card" style="width: 18rem;">
+                            <a href="{{ url_for('get_recipe_info', user_id=user_id, search_id=item.id) }}">
+                                <img src="{{ item.image }}" class="card-img-top card-images" alt="food-image">
+                            </a>
+                            <div class="card-body">
+                                <h5 class="card-title">{{ item.title }}</h5>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
             {% endif %}
         </div>

@@ -24,8 +24,12 @@
                     <h5>Price Per Serving</h5>
                     <p class="recipe-content">${{ result.pricePerServing }}</p>
 
+                    <h5>Ready Time</h5>
+                    <p class="recipe-content">${{ result.readyInMinutes }} minutes</p>
+
                     <h5>Website</h5>
-                    <p class="recipe-content"><a href="{{ result.sourceUrl }}">{{ result.sourceName }}</a></p>
+                    <p class="recipe-content">Source: <a href="{{ result.sourceUrl }}">{{ result.sourceName }}</a></p>
+                    <p class="recipe-content"><a href="{{ result.spoonacularSourceUrl }}">More Details</a></p>
 
                     <h5>Ingredients</h5>
                     <ul>
@@ -33,6 +37,9 @@
                         <li>{{ ingredient.original }}</li>
                         {% endfor %}
                     </ul>
+
+                    <h5>Summary</h5>
+                    <p class="recipe-content">{{ result.summary | safe }}</p>
                 </div>
                 <div class="col-lg-6 col-md-6 text-center">
                     <img src="{{ result.image }}" class="recipe-img">
