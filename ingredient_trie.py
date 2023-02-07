@@ -30,7 +30,7 @@ class Trie:
         cur = self.root
 
         for c in word:
-            if c not in cur.children[c]:
+            if c not in cur.children:
                 return False
             cur = cur.children[c]
         return cur.is_word

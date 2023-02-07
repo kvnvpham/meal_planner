@@ -44,9 +44,7 @@ class AddToWeek(FlaskForm):
 
 
 class AddIngredient(FlaskForm):
-    name = StringField(label="Ingredient Name",
-                       validators=[InputRequired()],
-                       description="Input multi-word named ingredients connected with '-'")
+    name = StringField(label="Ingredient Name", validators=[InputRequired()])
     submit = SubmitField(label="Add")
     cancel = SubmitField(label="Cancel")
 

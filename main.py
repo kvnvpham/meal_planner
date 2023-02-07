@@ -195,6 +195,7 @@ def logout():
 
 
 @app.route("/ingredient_library/<int:user_id>", methods=['GET', 'POST'])
+@login_required
 @admin_only
 def ingredient_library(user_id):
     form = AddIngredient()
@@ -202,7 +203,7 @@ def ingredient_library(user_id):
     if form.cancel.data:
         return redirect(url_for("home", user_id=user_id))
     if form.validate_on_submit():
-        Trie.add_word(form.name.data.title())
+        trie.add_word(form.name.data.title())
         return redirect(url_for("home", user_id=user_id))
     return render_template("add_ingredient.html", user_id=user_id, form=form, admin=True)
 
@@ -373,6 +374,29 @@ def edit_recipe(user_id):
         ingredients_text = bleach_text.clean_text(form.ingredients.data)
         directions_text = bleach_text.clean_text(form.directions.data)
 
+        text = form.ingredients.data
+        omit = ["<ul>", "</ul>", "<li>", "</li>", "&nbsp", "frac12", "frac13", "frac14", "&ldquo", "&rdquo", ";", ", ",
+                " (", ")", "&", "\r\n\t", "\r\n"]
+        for char in omit:
+            text = text.replace(char, "*")
+        print(text.title().split("*"))
+
+        for ingrdnt in text.title().split("*"):
+            if trie.search(ingrdnt):
+                print(ingrdnt)
+                # query = Ingredients.query.filter_by(name=ingrdnt).first()
+                # if query:
+                #     query.user_id = user_id
+                #     query.recipe = recipe_id
+                # else:
+                #     new_ingrdnt = Ingredients(
+                #         name=ingrdnt,
+                #         user_id=user_id,
+                #         recipe=recipe_id
+                #     )
+                #     db.session.add(new_ingrdnt)
+                # db.session.commit()
+
         recipe.name = form.name.data
         recipe.recipe_type = form.recipe_type.data
         recipe.img = form.img.data
@@ -437,9 +461,6 @@ def search(user_id):
 
     if form.validate_on_submit():
         response = library.search_recipe_id(form.recipe.data)
-
-        for item in response['results']:
-            print(item['id'])
 
         return render_template("search.html", user_id=user_id, form=form, results=response["results"])
     return render_template("search.html", user_id=user_id, form=form)
