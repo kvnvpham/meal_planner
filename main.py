@@ -1,11 +1,11 @@
 from flask import Flask, render_template, redirect, request, url_for, flash, abort
 from functools import wraps
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import relationship
 from flask_bootstrap import Bootstrap
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
+from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
-from forms import RegisterForm, LoginForm, CreateCategory, RecipesForm, AddToWeek, AddIngredient, SearchRecipe
+from forms import RegisterForm, LoginForm, CreateCategory, RecipesForm, AddToWeek, LibraryFileForm, AddIngredient, SearchRecipe
 from flask_ckeditor import CKEditor
 from ingredient_trie import Trie
 from recipe_api import RecipeLibrary
@@ -38,10 +38,10 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String, unique=True, nullable=False)
     password = db.Column(db.String, nullable=False)
 
-    food_categories = relationship("Category", back_populates="user")
-    recipes = relationship("Recipes", back_populates="user")
-    my_week = relationship("WeeklyMeal", back_populates="user")
-    ingredients = relationship("Ingredients", back_populates="user")
+    food_categories = db.relationship("Category", back_populates="user")
+    recipes = db.relationship("Recipes", back_populates="user")
+    my_week = db.relationship("WeeklyMeal", back_populates="user")
+    ingredients = db.relationship("Ingredients", back_populates="user")
 
 
 class Category(db.Model):
@@ -51,9 +51,9 @@ class Category(db.Model):
     icon_img = db.Column(db.String, nullable=True)
 
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    user = relationship("User", back_populates="food_categories")
+    user = db.relationship("User", back_populates="food_categories")
 
-    recipe = relationship("Recipes", back_populates="category")
+    recipe = db.relationship("Recipes", back_populates="category")
 
 
 class WeeklyMeal(db.Model):
@@ -62,8 +62,15 @@ class WeeklyMeal(db.Model):
     day_of_week = db.Column(db.String(250), nullable=False)
 
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    user = relationship("User", back_populates="my_week")
-    my_recipes = relationship("Recipes", back_populates="my_week")
+    user = db.relationship("User", back_populates="my_week")
+    my_recipes = db.relationship("Recipes", back_populates="my_week")
+
+
+recipe_to_ingredient = db.Table(
+    "recipe_to_ingredient",
+    db.Column("recipe_id", db.Integer, db.ForeignKey("recipes.id")),
+    db.Column("ingredient_id", db.Integer, db.ForeignKey("ingredients.id"))
+)
 
 
 class Recipes(db.Model):
@@ -77,16 +84,15 @@ class Recipes(db.Model):
     directions = db.Column(db.Text, nullable=False)
 
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    user = relationship("User", back_populates="recipes")
+    user = db.relationship("User", back_populates="recipes")
 
     category_id = db.Column(db.Integer, db.ForeignKey("category.id"))
-    category = relationship("Category", back_populates="recipe")
+    category = db.relationship("Category", back_populates="recipe")
 
     my_week_id = db.Column(db.Integer, db.ForeignKey("weekly_meal.id"))
-    my_week = relationship("WeeklyMeal", back_populates="my_recipes")
+    my_week = db.relationship("WeeklyMeal", back_populates="my_recipes")
 
-    ingredient_id = db.Column(db.Integer, db.ForeignKey("ingredients.id"))
-    ingredient = relationship("Ingredients", back_populates="recipe")
+    ingredient = db.relationship("Ingredients", secondary=recipe_to_ingredient, backref="recipe")
 
 
 class Ingredients(db.Model):
@@ -94,10 +100,8 @@ class Ingredients(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(500), nullable=False)
 
-    recipe = relationship("Recipes", back_populates="ingredient")
-
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    user = relationship("User", back_populates="ingredients")
+    user = db.relationship("User", back_populates="ingredients")
 
 
 @db.event.listens_for(User, "after_insert")
@@ -198,14 +202,22 @@ def logout():
 @login_required
 @admin_only
 def ingredient_library(user_id):
-    form = AddIngredient()
+    form_upload = LibraryFileForm()
+    form_add = AddIngredient()
 
-    if form.cancel.data:
+    if form_add.cancel.data:
         return redirect(url_for("home", user_id=user_id))
-    if form.validate_on_submit():
-        trie.add_word(form.name.data.title())
-        return redirect(url_for("home", user_id=user_id))
-    return render_template("add_ingredient.html", user_id=user_id, form=form, admin=True)
+    if form_add.validate_on_submit():
+        trie.add_word(form_add.name.data.title())
+        flash("Added to Library Successfully")
+        return redirect(url_for("ingredient_library", user_id=user_id))
+
+    if form_upload.validate_on_submit():
+        file = form_upload.file.data
+        filename = secure_filename(file.filename)
+        return redirect(url_for("ingredient_library", user_id=user_id))
+
+    return render_template("add_library.html", user_id=user_id, form_upload=form_upload, form_add=form_add)
 
 
 @app.route("/my_week/<int:user_id>")
@@ -318,6 +330,26 @@ def create_recipe(user_id, category_id):
             category_id=category_id
         )
         db.session.add(new_recipe)
+
+        text = form.ingredients.data
+        omit = ["<ul>", "</ul>", "<li>", "</li>", "&nbsp", "frac12", "frac13", "frac14", "&ldquo", "&rdquo", ";", ", ",
+                " (", ")", "&", "\r\n\t", "\r\n"]
+        for char in omit:
+            text = text.replace(char, "-*-")
+
+        for ingrdnt in text.title().split("-*-"):
+            if trie.search(ingrdnt):
+                ing = Ingredients.query.filter_by(name=ingrdnt).first()
+                if ing:
+                    new_recipe.ingredient.append(ing)
+                else:
+                    new_ingrdnt = Ingredients(
+                        name=ingrdnt,
+                        user_id=user_id,
+                    )
+                    db.session.add(new_ingrdnt)
+                    new_recipe.ingredient.append(new_ingrdnt)
+
         db.session.commit()
         return redirect(url_for("my_recipes", user_id=user_id))
     return render_template("create_recipe.html", form=form, user_id=current_user.id, category_id=category_id)
@@ -378,24 +410,22 @@ def edit_recipe(user_id):
         omit = ["<ul>", "</ul>", "<li>", "</li>", "&nbsp", "frac12", "frac13", "frac14", "&ldquo", "&rdquo", ";", ", ",
                 " (", ")", "&", "\r\n\t", "\r\n"]
         for char in omit:
-            text = text.replace(char, "*")
-        print(text.title().split("*"))
+            text = text.replace(char, "-*-")
+        print(text.title().split("-*-"))
 
-        for ingrdnt in text.title().split("*"):
+        for ingrdnt in text.title().split("-*-"):
             if trie.search(ingrdnt):
                 print(ingrdnt)
-                # query = Ingredients.query.filter_by(name=ingrdnt).first()
-                # if query:
-                #     query.user_id = user_id
-                #     query.recipe = recipe_id
-                # else:
-                #     new_ingrdnt = Ingredients(
-                #         name=ingrdnt,
-                #         user_id=user_id,
-                #         recipe=recipe_id
-                #     )
-                #     db.session.add(new_ingrdnt)
-                # db.session.commit()
+                ing = Ingredients.query.filter_by(name=ingrdnt).first()
+                if ing:
+                    recipe.ingredient.append(ing)
+                else:
+                    new_ingrdnt = Ingredients(
+                        name=ingrdnt,
+                        user_id=user_id,
+                    )
+                    db.session.add(new_ingrdnt)
+                    recipe.ingredient.append(new_ingrdnt)
 
         recipe.name = form.name.data
         recipe.recipe_type = form.recipe_type.data
@@ -450,7 +480,7 @@ def add_ingredient(user_id):
         db.session.commit()
         return redirect(url_for("my_ingredients", user_id=user_id))
 
-    return render_template("add_ingredient.html", user_id=user_id, form=form, admin=False)
+    return render_template("add_ingredient.html", user_id=user_id, form=form)
 
 
 @app.route("/search/<int:user_id>", methods=['GET', 'POST'])

@@ -13,14 +13,10 @@
     <section id="cat-recipes-form">
         <div class="container-fluid">
             <div class="form-section">
-                {% if admin %}
-                <form action="{{ url_for('ingredient_library', user_id=user_id) }}" method="post" novalidate>
-                {% else %}
                 <form action="{{ url_for('add_ingredient', user_id=user_id) }}" method="post" novalidate>
-                {% endif %}
                     {{ form.csrf_token }}
                     {{ form.name.label(class='form-label') }}
-                    {{ form.name(class='form-control', placeholder=form.name.description) }}
+                    {{ form.name(class='form-control') }}
                     {{ form.submit(class='btn btn-dark create-btn') }} {{ form.cancel(class='btn btn-dark create-btn') }}
                 </form>
             </div>
