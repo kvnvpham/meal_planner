@@ -411,11 +411,9 @@ def edit_recipe(user_id):
                 " (", ")", "&", "\r\n\t", "\r\n"]
         for char in omit:
             text = text.replace(char, "-*-")
-        print(text.title().split("-*-"))
 
         for ingrdnt in text.title().split("-*-"):
             if trie.search(ingrdnt):
-                print(ingrdnt)
                 ing = Ingredients.query.filter_by(name=ingrdnt).first()
                 if ing:
                     recipe.ingredient.append(ing)
