@@ -12,10 +12,12 @@ from recipe_api import RecipeLibrary
 from datetime import date
 import random
 import os
+import csv
 from bleach_text import Bleach
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "super secret"
+app.config["UPLOAD_FOLDER"] = "static/files"
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///meals.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -198,6 +200,14 @@ def logout():
     return redirect(url_for("home"))
 
 
+def process_csv(filename):
+    with open(f"static/{filename}", mode="r") as file:
+        read = csv.DictReader(file)
+
+        for row in read["Ingredient"]:
+            trie.add_word(row.title())
+
+
 @app.route("/ingredient_library/<int:user_id>", methods=['GET', 'POST'])
 @login_required
 @admin_only
@@ -215,6 +225,12 @@ def ingredient_library(user_id):
     if form_upload.validate_on_submit():
         file = form_upload.file.data
         filename = secure_filename(file.filename)
+        new_filename = f"{filename.split('.')[0]}_{date.today()}.csv"
+        file_path = os.path.join(app.config["UPLOAD_FOLDER"], new_filename)
+        file.save(file_path)
+
+        process_csv(new_filename)
+
         return redirect(url_for("ingredient_library", user_id=user_id))
 
     return render_template("add_library.html", user_id=user_id, form_upload=form_upload, form_add=form_add)
