@@ -10,9 +10,9 @@ from flask_ckeditor import CKEditor
 from ingredient_trie import Trie
 from recipe_api import RecipeLibrary
 from datetime import date
+from csv_handler import CSVHandler
 import random
 import os
-import csv
 from bleach_text import Bleach
 
 app = Flask(__name__)
@@ -24,8 +24,8 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 trie = Trie()
-library = RecipeLibrary()
-library.key = os.environ.get("SPOON_API")
+library = RecipeLibrary(os.environ.get("SPOON_API"))
+csv_handler = CSVHandler(app)
 
 login_manager = LoginManager(app)
 Bootstrap(app)
@@ -118,6 +118,7 @@ def insert_day(mapper, connection, target):
 
 with app.app_context():
     db.create_all()
+    csv_handler.load_csv()
 
 
 @login_manager.user_loader
@@ -200,14 +201,6 @@ def logout():
     return redirect(url_for("home"))
 
 
-def process_csv(filename):
-    with open(f"static/{filename}", mode="r") as file:
-        read = csv.DictReader(file)
-
-        for row in read["Ingredient"]:
-            trie.add_word(row.title())
-
-
 @app.route("/ingredient_library/<int:user_id>", methods=['GET', 'POST'])
 @login_required
 @admin_only
@@ -223,13 +216,15 @@ def ingredient_library(user_id):
         return redirect(url_for("ingredient_library", user_id=user_id))
 
     if form_upload.validate_on_submit():
+        print("YeS")
         file = form_upload.file.data
         filename = secure_filename(file.filename)
         new_filename = f"{filename.split('.')[0]}_{date.today()}.csv"
+        print(new_filename)
         file_path = os.path.join(app.config["UPLOAD_FOLDER"], new_filename)
         file.save(file_path)
 
-        process_csv(new_filename)
+        csv_handler.process_csv(new_filename)
 
         return redirect(url_for("ingredient_library", user_id=user_id))
 

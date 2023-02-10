@@ -3,9 +3,9 @@ import requests
 
 class RecipeLibrary:
 
-    def __init__(self):
+    def __init__(self, key):
         self.endpoint = "https://api.spoonacular.com"
-        self.key = None
+        self.key = key
 
     def search_recipe_id(self, query):
         params = {
