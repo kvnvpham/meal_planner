@@ -3,20 +3,20 @@
 {% block title %}My Recipes{% endblock %}
 
 {% block main %}
-    <section id="recipes-title">
+    <section id="myRecipes">
         <div class="container-fluid recipes-bg banner-pad text-start">
             <div>
-                <h2>All Recipes</h2>
+                <h2>Recipes</h2>
             </div>
         </div>
         <div class="back-to-top">
-            <a href="#recipes-title" class="btn top-btn" title="Back to top">
+            <a href="#myRecipes" class="btn top-btn" title="Back to top">
                 <i class="fa-solid fa-angle-up"></i>
             </a>
         </div>
     </section>
 
-    <section class="all-recipes">
+    <section class="recipesContent">
         <div class="container-fluid section text-start">
             <div class="category-content">
                 <span class="create-category"><a href="{{ url_for('create_category', user_id=user_id) }}" class="btn btn-dark">Create Category</a></span>

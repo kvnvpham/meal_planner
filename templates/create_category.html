@@ -1,17 +1,17 @@
 {% extends 'base.html' %}
 
-{% block title %}Category{% endblock %}
+{% block title %}Add Category{% endblock %}
 
 {% block main %}
 
-    <section class="cat-recipes-title">
+    <section class="addCategoryTitle">
         <div class="container-fluid cat-bg banner-pad text-start">
-            <h2>Category</h2>
+            <h2>Add Category</h2>
         </div>
     </section>
 
-    <section id="cat-recipes-form">
-        <div class="container-fluid">
+    <section id="addCategoryForm">
+        <div class="container-fluid section text-start">
             <div class="form-section">
                 {% if not category_id %}
                 <form action="{{ url_for('create_category', user_id=user_id) }}" method="post" novalidate>

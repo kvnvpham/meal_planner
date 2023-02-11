@@ -1,6 +1,11 @@
 import bleach
 
 class Bleach:
+    """ The object permits specified HTML tags and attributes entered into the database """
+
+    def __init__(self, app):
+        self.app = app
+
     def clean_text(self, s):
         allow_tags = [
             'a', 'abbr', 'acronym', 'b', 'blockquote', 'br', 'code', 'dd', 'del', 'div', 'dl', 'dt', 'em', 'h1',

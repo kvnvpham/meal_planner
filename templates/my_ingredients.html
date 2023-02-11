@@ -4,20 +4,20 @@
 
 {% block main %}
 
-    <section id="my-ingredients">
+    <section id="myIngredients">
         <div class="container-fluid recipes-bg banner-pad text-start">
             <div>
                 <h2>Ingredients</h2>
             </div>
         </div>
         <div class="back-to-top">
-            <a href="#my-ingredients" class="btn top-btn" title="Back to top">
+            <a href="#myIngredients" class="btn top-btn" title="Back to top">
                 <i class="fa-solid fa-angle-up"></i>
             </a>
         </div>
     </section>
 
-    <section id="ingredients-body">
+    <section id="ingredientsContent">
         <div class="container-fluid section text-start">
             <span class="create-category"><a href="{{ url_for('add_ingredient', user_id=user_id) }}" class="btn btn-dark">Add Ingredient</a></span>
         </div>

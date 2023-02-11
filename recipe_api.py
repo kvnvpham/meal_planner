@@ -2,8 +2,10 @@ import requests
 
 
 class RecipeLibrary:
+    """ The object calls and retrieves data from specified API """
 
-    def __init__(self, key):
+    def __init__(self, app, key):
+        self.app = app
         self.endpoint = "https://api.spoonacular.com"
         self.key = key
 

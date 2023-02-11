@@ -1,17 +1,17 @@
 {% extends 'base.html' %}
 
-{% block title %}Recipe{% endblock %}
+{% block title %}Add Ingredient{% endblock %}
 
 {% block main %}
 
-    <section class="cat-recipes-title">
+    <section class="addIngredientTitle">
         <div class="container-fluid cat-bg banner-pad text-start">
             <h2>Ingredient</h2>
         </div>
     </section>
 
-    <section id="cat-recipes-form">
-        <div class="container-fluid">
+    <section id="addIngredientForm">
+        <div class="container-fluid section text-start">
             <div class="form-section">
                 <form action="{{ url_for('add_ingredient', user_id=user_id) }}" method="post" novalidate>
                     {{ form.csrf_token }}

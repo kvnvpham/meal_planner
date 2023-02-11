@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, request, url_for, flash, abort
+from flask import Flask, render_template, redirect, request, url_for, flash, abort, send_from_directory
 from functools import wraps
 from flask_sqlalchemy import SQLAlchemy
 from flask_bootstrap import Bootstrap
@@ -23,14 +23,14 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///meals.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
-trie = Trie()
-library = RecipeLibrary(os.environ.get("SPOON_API"))
+trie = Trie(app)
+library = RecipeLibrary(app, os.environ.get("SPOON_API"))
 csv_handler = CSVHandler(app)
 
 login_manager = LoginManager(app)
 Bootstrap(app)
 ckeditor = CKEditor(app)
-bleach_text = Bleach()
+bleach_text = Bleach(app)
 
 
 class User(UserMixin, db.Model):
@@ -207,28 +207,43 @@ def logout():
 def ingredient_library(user_id):
     form_upload = LibraryFileForm()
     form_add = AddIngredient()
+    files = os.listdir(app.config["UPLOAD_FOLDER"])
 
     if form_add.cancel.data:
-        return redirect(url_for("home", user_id=user_id))
+        return redirect(url_for("home", user_id=user_id, files=files))
     if form_add.validate_on_submit():
         trie.add_word(form_add.name.data.title())
         flash("Added to Library Successfully")
-        return redirect(url_for("ingredient_library", user_id=user_id))
+        return redirect(url_for("ingredient_library", user_id=user_id, files=files))
 
     if form_upload.validate_on_submit():
-        print("YeS")
         file = form_upload.file.data
         filename = secure_filename(file.filename)
         new_filename = f"{filename.split('.')[0]}_{date.today()}.csv"
-        print(new_filename)
         file_path = os.path.join(app.config["UPLOAD_FOLDER"], new_filename)
         file.save(file_path)
 
         csv_handler.process_csv(new_filename)
+        flash("Upload Successful")
+        return redirect(url_for("ingredient_library", user_id=user_id, files=files))
 
-        return redirect(url_for("ingredient_library", user_id=user_id))
+    return render_template("add_library.html", user_id=user_id, form_upload=form_upload, form_add=form_add, files=files)
 
-    return render_template("add_library.html", user_id=user_id, form_upload=form_upload, form_add=form_add)
+
+@app.route("/download/<int:user_id>")
+@login_required
+@admin_only
+def download_csv(user_id):
+    files = os.listdir(app.config["UPLOAD_FOLDER"])
+
+    return render_template("download.html", user_id=user_id, files=files)
+
+
+@app.route("/active_download/<int:user_id>/filename")
+@login_required
+@admin_only
+def active_download(user_id, filename):
+    return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
 
 @app.route("/my_week/<int:user_id>")

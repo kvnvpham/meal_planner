@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %}Download{% endblock %}
+
+{% block main %}
+
+    <section class="downloadTitle">
+        <div class="container-fluid cat-bg banner-pad text-start">
+            <h2>Download</h2>
+        </div>
+    </section>
+
+    <section id="downloadContent">
+        <div class="container-fluid section text-start">
+            <div class="list-group">
+                {% for file in files %}
+                <a href="{{ url_for('active_download', user_id=user_id, filename=file) }}"
+                   class="list-group-item list-group-item-action list-spacing">
+                    {{ file }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+{% endblock %}

@@ -1,17 +1,17 @@
 {% extends 'base.html' %}
 
-{% block title %}Recipe{% endblock %}
+{% block title %}Add Recipe{% endblock %}
 
 {% block main %}
 
-    <section class="cat-recipes-title">
+    <section class="addRecipeTitle">
         <div class="container-fluid cat-bg banner-pad text-start">
-            <h2>Recipe</h2>
+            <h2>Add Recipe</h2>
         </div>
     </section>
 
-    <section id="cat-recipes-form">
-        <div class="container-fluid">
+    <section id="addRecipeForm">
+        <div class="container-fluid section text-start">
             <div class="form-section">
                 {% if edit %}
                 <form action="{{ url_for('edit_recipe', user_id=user_id, category_id=category_id, recipe_id=recipe_id) }}" method="post" novalidate>

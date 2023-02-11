@@ -3,20 +3,20 @@
 {% block title %}My Week{% endblock %}
 
 {% block main %}
-    <section id="my-week">
+    <section id="myWeek">
         <div class="container-fluid recipes-bg banner-pad text-start">
             <div>
                 <h2>Schedule</h2>
             </div>
         </div>
         <div class="back-to-top">
-            <a href="#my-week" class="btn top-btn" title="Back to top">
+            <a href="#myWeek" class="btn top-btn" title="Back to top">
                 <i class="fa-solid fa-angle-up"></i>
             </a>
         </div>
     </section>
 
-    <section id="week-content">
+    <section id="weekContent">
         <div class="container-fluid section text-start">
             <div class="category-content">
                 {% if user.recipes %}
@@ -30,7 +30,9 @@
                         </button>
                         <ul class="dropdown-menu">
                             {% for day in user.my_week %}
+                            {% if day.my_recipes %}
                             <li><a class="dropdown-item" href="#{{ day.day_of_week }}">{{ day.day_of_week }}</a></li>
+                            {% endif %}
                             {% endfor %}
                         </ul>
                     </div>
@@ -56,6 +58,7 @@
 
             <div class="day-content">
                 {% for day in user.my_week %}
+                {% if day.my_recipes %}
                 <div class="cat-control" id="{{ day.day_of_week }}">
                     <h3>{{ day.day_of_week }}</h3>
                 </div>
@@ -75,6 +78,7 @@
                         {% endfor %}
                     </div>
                 </div>
+                {% endif %}
                 {% endfor %}
             </div>
         </div>

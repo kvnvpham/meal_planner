@@ -1,11 +1,16 @@
 class TrieNode:
+    """ The object creates Trie nodes """
+
     def __init__(self):
         self.children = {}
         self.is_word = False
 
 
 class Trie:
-    def __init__(self):
+    """ The object manages Trie data by adding words to the data structure and recalling existing words """
+
+    def __init__(self, app):
+        self.app = app
         self.root = TrieNode()
 
     def add_word(self, word):

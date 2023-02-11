@@ -1,17 +1,17 @@
 {% extends 'base.html' %}
 
-{% block title %}Recipe{% endblock %}
+{% block title %}My Recipe Details{% endblock %}
 
 {% block main %}
-    <section id="recipe-title">
+    <section id="recipeDetails">
         <div class="container-fluid view-recipe banner-pad text-start">
             <div>
-                <h2>Recipe</h2>
+                <h2>My Recipe</h2>
             </div>
         </div>
     </section>
 
-    <section id="recipe-body">
+    <section id="recipeDetailsContent">
         <div class="container-fluid section">
             <div class="recipe-name">
                 <h3><span class="material-symbols-outlined">restaurant</span> {{ recipe.name }}</h3>

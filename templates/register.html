@@ -4,7 +4,7 @@
 
 {% block main %}
 
-    <section id="register-title">
+    <section id="registerTitle">
         <div class="container-fluid register-banner banner-pad text-start">
             <div>
                 <h2>Register</h2>
@@ -12,8 +12,8 @@
         </div>
     </section>
 
-    <section id="register-form">
-        <div class="container-fluid">
+    <section id="registerForm">
+        <div class="container-fluid section text-start">
             <div class="form-section">
                 <form action="{{ url_for('register') }}" method="post" novalidate>
                     {{ form.csrf_token }}

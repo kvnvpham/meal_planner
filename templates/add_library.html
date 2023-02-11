@@ -1,17 +1,22 @@
 {% extends 'base.html' %}
 
-{% block title %}Recipe{% endblock %}
+{% block title %}Ingredient Library{% endblock %}
 
 {% block main %}
 
-    <section class="cat-recipes-title">
+    <section class="libraryTitle">
         <div class="container-fluid cat-bg banner-pad text-start">
             <h2>Ingredient Library</h2>
         </div>
     </section>
 
-    <section id="cat-recipes-form">
-        <div class="container-fluid">
+    <section id="libraryContent">
+        <div class="container-fluid section text-start">
+            {% if files %}
+            <div class="category-content">
+                <span class="create-category"><a href="{{ url_for('download_csv', user_id=user_id) }}" class="btn btn-dark">Download Previous Files</a></span>
+            </div>
+            {% endif %}
             <div class="form-section">
                 {% with messages = get_flashed_messages() %}
                     {% if messages %}
@@ -28,7 +33,7 @@
                 </form>
             </div>
             <div class="form-section">
-                <form action="{{ url_for('ingredient_library', user_id=user_id) }}" method="post" novalidate>
+                <form action="{{ url_for('ingredient_library', user_id=user_id) }}" method="post" enctype="multipart/form-data" novalidate>
                     {{ form_upload.csrf_token }}
                     {{ form_upload.file.label(class='form-label') }}
                     <p>Upload CSV file with a column labeled "Ingredient"</p>
