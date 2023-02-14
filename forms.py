@@ -45,7 +45,7 @@ class AddToWeek(FlaskForm):
 
 
 class LibraryFileForm(FlaskForm):
-    file = FileField(label="CSV Library",
+    file = FileField(label="Upload CSV File",
                      validators=[FileRequired(), FileAllowed(['csv'], "CSV Files Only")])
     submit = SubmitField("Upload")
 

@@ -27,4 +27,14 @@ class CSVHandler:
                 self.trie.add_word(row["Ingredient"].title())
 
     def download_csv(self):
-        pass
+        files = os.listdir(self.app.config["UPLOAD_FOLDER"])
+        return files
+
+    def process_user_csv(self, filename):
+        with open(f"static/user_files/{filename}", newline='') as file:
+            ingredient = csv.DictReader(file)
+
+            ingredient_set = set()
+            for row in ingredient:
+                ingredient_set.add(row["Ingredient"].title())
+            return ingredient_set

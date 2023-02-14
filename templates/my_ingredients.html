@@ -24,7 +24,7 @@
 
         <div class="ingredients-list section">
             <ul>
-                {% for ingredient in user.ingredients %}
+                {% for ingredient in user.current_ingredients %}
                 <li>{{ ingredient.name }}</li>
                 {% endfor %}
             </ul>

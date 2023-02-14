@@ -106,7 +106,7 @@ class Ingredients(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     user = db.relationship("User", back_populates="ingredients")
 
-    cur_ingrdt = db.relationship("CurrentIngredients", back_populates="ingredients")
+    cur_ingrdt = db.relationship("CurrentIngredients", back_populates="ingredient")
 
 
 class CurrentIngredients(db.Model):
@@ -117,8 +117,8 @@ class CurrentIngredients(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     user = db.relationship("User", back_populates="current_ingredients")
 
-    cur_ingredt_id = db.Column(db.Integer, db.ForeignKey("ingredients.id"))
-    ingredients = db.relationship("Ingredients", back_populates="cur_ingrdt")
+    cur_ingrdt_id = db.Column(db.Integer, db.ForeignKey("ingredients.id"))
+    ingredient = db.relationship("Ingredients", back_populates="cur_ingrdt")
 
 
 @db.event.listens_for(User, "after_insert")
@@ -249,7 +249,7 @@ def ingredient_library(user_id):
 @login_required
 @admin_only
 def download_csv(user_id):
-    files = os.listdir(app.config["UPLOAD_FOLDER"])
+    files = csv_handler.download_csv()
 
     return render_template("download.html", user_id=user_id, files=files)
 
@@ -387,6 +387,7 @@ def create_recipe(user_id, category_id):
                     new_ingrdnt = Ingredients(
                         name=ingrdnt,
                         user_id=user_id,
+                        recipe=new_recipe
                     )
                     db.session.add(new_ingrdnt)
                     new_recipe.ingredient.append(new_ingrdnt)
@@ -462,6 +463,7 @@ def edit_recipe(user_id):
                     new_ingrdnt = Ingredients(
                         name=ingrdnt,
                         user_id=user_id,
+                        recipe=recipe.id
                     )
                     db.session.add(new_ingrdnt)
                     recipe.ingredient.append(new_ingrdnt)
@@ -506,20 +508,49 @@ def my_ingredients(user_id):
 @login_required
 @correct_user
 def add_ingredient(user_id):
-    form = AddIngredient()
+    form_add = AddIngredient()
+    form_upload = LibraryFileForm()
 
-    if form.cancel.data:
+    if form_add.cancel.data:
         return redirect(url_for("my_ingredients", user_id=user_id))
-    if form.validate_on_submit():
-        ingredient = Ingredients(
-            name=form.name.data.title(),
-            user_id=user_id
+    if form_add.validate_on_submit():
+        related_ingrdt = Ingredients.query.filter_by(name=form_add.name.data.title()).first()
+
+        new_ingredient = CurrentIngredients(
+            name=form_add.name.data.title(),
+            user_id=user_id,
+            ingredient=related_ingrdt.id if related_ingrdt else None
         )
-        db.session.add(ingredient)
+        db.session.add(new_ingredient)
         db.session.commit()
+        flash("Added to List Successfully")
         return redirect(url_for("my_ingredients", user_id=user_id))
 
-    return render_template("add_ingredient.html", user_id=user_id, form=form)
+    if form_upload.validate_on_submit():
+        file = form_upload.file.data
+        filename = secure_filename(file.filename)
+        new_filename = f"{filename.split('.')[0]}_{user_id}"
+        file_path = os.path.join("static/user_files", new_filename)
+        file.save(file_path)
+
+        user_set = csv_handler.process_user_csv(new_filename)
+        for row in user_set:
+            query = Ingredients.query.filter_by(name=row).first()
+            current_ingredient = CurrentIngredients.query.filter_by(name=row).first()
+            if current_ingredient and query:
+                current_ingredient.ingredient = query.id
+            if not current_ingredient:
+                new_ingredient = CurrentIngredients(
+                    name=row,
+                    user_id=user_id,
+                    ingredient=query.id if query else None
+                )
+                db.session.add(new_ingredient)
+        db.session.commit()
+        flash("Upload Successful")
+        return redirect(url_for("my_ingredients", user_id=user_id))
+
+    return render_template("add_ingredient.html", user_id=user_id, form_add=form_add, form_upload=form_upload)
 
 
 @app.route("/search/<int:user_id>", methods=['GET', 'POST'])
