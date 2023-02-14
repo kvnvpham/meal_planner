@@ -44,6 +44,7 @@ class User(UserMixin, db.Model):
     recipes = db.relationship("Recipes", back_populates="user")
     my_week = db.relationship("WeeklyMeal", back_populates="user")
     ingredients = db.relationship("Ingredients", back_populates="user")
+    current_ingredients = db.relationship("CurrentIngredients", back_populates="user")
 
 
 class Category(db.Model):
@@ -104,6 +105,20 @@ class Ingredients(db.Model):
 
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     user = db.relationship("User", back_populates="ingredients")
+
+    cur_ingrdt = db.relationship("CurrentIngredients", back_populates="ingredients")
+
+
+class CurrentIngredients(db.Model):
+    __tablename__ = "current_ingredients"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(500), nullable=False)
+
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    user = db.relationship("User", back_populates="current_ingredients")
+
+    cur_ingredt_id = db.Column(db.Integer, db.ForeignKey("ingredients.id"))
+    ingredients = db.relationship("Ingredients", back_populates="cur_ingrdt")
 
 
 @db.event.listens_for(User, "after_insert")
