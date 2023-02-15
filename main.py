@@ -381,8 +381,11 @@ def create_recipe(user_id, category_id):
         for ingrdnt in text.title().split("-*-"):
             if trie.search(ingrdnt):
                 ing = Ingredients.query.filter_by(name=ingrdnt).first()
+                cur_ing = CurrentIngredients.query.filter_by(name=ingrdnt).first()
                 if ing:
                     new_recipe.ingredient.append(ing)
+                    if cur_ing:
+                        cur_ing.ingredient.append(ing)
                 else:
                     new_ingrdnt = Ingredients(
                         name=ingrdnt,
@@ -391,6 +394,8 @@ def create_recipe(user_id, category_id):
                     )
                     db.session.add(new_ingrdnt)
                     new_recipe.ingredient.append(new_ingrdnt)
+                    if cur_ing:
+                        cur_ing.ingredient.append(new_ingrdnt)
 
         db.session.commit()
         return redirect(url_for("my_recipes", user_id=user_id))
@@ -453,20 +458,43 @@ def edit_recipe(user_id):
                 " (", ")", "&", "\r\n\t", "\r\n"]
         for char in omit:
             text = text.replace(char, "-*-")
+        print(text.title().split("-*-"))
 
         for ingrdnt in text.title().split("-*-"):
             if trie.search(ingrdnt):
+                print(ingrdnt)
                 ing = Ingredients.query.filter_by(name=ingrdnt).first()
+                cur_ing = CurrentIngredients.query.filter_by(name=ingrdnt).first()
                 if ing:
-                    recipe.ingredient.append(ing)
+                    recipe.ingredient.append(ing.id)
                 else:
                     new_ingrdnt = Ingredients(
                         name=ingrdnt,
                         user_id=user_id,
-                        recipe=recipe.id
                     )
                     db.session.add(new_ingrdnt)
                     recipe.ingredient.append(new_ingrdnt)
+        db.session.commit()
+
+
+
+                # print(ingrdnt)
+                # ing = Ingredients.query.filter_by(name=ingrdnt).first()
+                # cur_ing = CurrentIngredients.query.filter_by(name=ingrdnt).first()
+                # if ing:
+                #     recipe.ingredient.append(ing.id)
+                #     if cur_ing:
+                #         cur_ing.ingredient.append(ing.id)
+                # else:
+                #     new_ingrdnt = Ingredients(
+                #         name=ingrdnt,
+                #         user_id=user_id,
+                #         recipe=recipe.id
+                #     )
+                #     db.session.add(new_ingrdnt)
+                #     recipe.ingredient.append(new_ingrdnt.id)
+                #     if cur_ing:
+                #         cur_ing.ingredient.append(new_ingrdnt.id)
 
         recipe.name = form.name.data
         recipe.recipe_type = form.recipe_type.data

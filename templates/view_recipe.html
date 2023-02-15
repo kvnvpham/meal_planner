@@ -41,6 +41,12 @@
 
                     <h5>Ingredients</h5>
                     <p>{{ recipe.ingredients | safe }}</p>
+                    <ul class="list-group">
+                        {% for ingredient in recipe.ingredient %}
+                        <li class="list-group-item">{{ Ingredient }}</li>
+                        {% endfor %}
+                    </ul>
+
                     <h5 class="recipe-directions">Directions</h5>
                     <p>{{ recipe.directions | safe }}</p>
 

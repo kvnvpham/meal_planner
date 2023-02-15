@@ -23,9 +23,9 @@
         </div>
 
         <div class="ingredients-list section">
-            <ul>
+            <ul class="list-group">
                 {% for ingredient in user.current_ingredients %}
-                <li>{{ ingredient.name }}</li>
+                <li class="list-group-item list-spacing">{{ ingredient.name }}</li>
                 {% endfor %}
             </ul>
         </div>
