@@ -13,8 +13,8 @@
     <section id="downloadContent">
         <div class="container-fluid section text-start">
             <div class="list-group">
-                {% for file in files %}
-                <a href="{{ url_for('active_download', user_id=user_id, filename=file) }}"
+                {% for file in files | reverse %}
+                <a href="{{ url_for('download_file', user_id=user_id, filename=file) }}"
                    class="list-group-item list-group-item-action list-spacing">
                     {{ file }}
                 </a>

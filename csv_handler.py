@@ -19,18 +19,11 @@ class CSVHandler:
                 for row in ingredients:
                     self.trie.add_word(row["Ingredient"].title())
 
-    def process_csv(self, filename):
-        with open(f"{self.app.config['UPLOAD_FOLDER']}/{filename}", newline='') as file:
-            ingredients = csv.DictReader(file)
-
-            for row in ingredients:
-                self.trie.add_word(row["Ingredient"].title())
-
     def download_csv(self):
         files = os.listdir(self.app.config["UPLOAD_FOLDER"])
         return files
 
-    def process_user_csv(self, filename):
+    def process_csv(self, filename):
         with open(f"static/user_files/{filename}", newline='') as file:
             ingredient = csv.DictReader(file)
 

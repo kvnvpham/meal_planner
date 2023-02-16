@@ -1,3 +1,5 @@
+import csv
+
 from flask import Flask, render_template, redirect, request, url_for, flash, abort, send_from_directory
 from functools import wraps
 from flask_sqlalchemy import SQLAlchemy
@@ -133,7 +135,6 @@ def insert_day(mapper, connection, target):
 
 with app.app_context():
     db.create_all()
-    csv_handler.load_csv()
 
 
 @login_manager.user_loader
@@ -155,6 +156,20 @@ def correct_user(f):
     def decorator(*args, **kwargs):
         if kwargs["user_id"] != current_user.id:
             abort(403)
+        return f(*args, **kwargs)
+    return decorator
+
+
+def load_library(f):
+    @wraps(f)
+    def decorator(*args, **kwargs):
+        files = os.listdir(app.config['UPLOAD_FOLDER'])
+        if files:
+            with open(f"{app.config['UPLOAD_FOLDER']}/{files[-1]}") as file:
+                read = csv.DictReader(file)
+
+                for row in read:
+                    trie.add_word(row["Ingredient"])
         return f(*args, **kwargs)
     return decorator
 
@@ -220,44 +235,33 @@ def logout():
 @login_required
 @admin_only
 def ingredient_library(user_id):
-    form_upload = LibraryFileForm()
-    form_add = AddIngredient()
-    files = os.listdir(app.config["UPLOAD_FOLDER"])
+    form = LibraryFileForm()
+    files = csv_handler.download_csv()
 
-    if form_add.cancel.data:
-        return redirect(url_for("home", user_id=user_id, files=files))
-    if form_add.validate_on_submit():
-        trie.add_word(form_add.name.data.title())
-        flash("Added to Library Successfully")
-        return redirect(url_for("ingredient_library", user_id=user_id, files=files))
-
-    if form_upload.validate_on_submit():
-        file = form_upload.file.data
+    if form.validate_on_submit():
+        file = form.file.data
         filename = secure_filename(file.filename)
         new_filename = f"{filename.split('.')[0]}_{date.today()}.csv"
         file_path = os.path.join(app.config["UPLOAD_FOLDER"], new_filename)
         file.save(file_path)
-
-        csv_handler.process_csv(new_filename)
         flash("Upload Successful")
         return redirect(url_for("ingredient_library", user_id=user_id, files=files))
 
-    return render_template("add_library.html", user_id=user_id, form_upload=form_upload, form_add=form_add, files=files)
+    return render_template("add_library.html", user_id=user_id, form=form, files=files)
 
 
-@app.route("/download/<int:user_id>")
+@app.route("/download_list/<int:user_id>")
 @login_required
 @admin_only
-def download_csv(user_id):
+def list_downloads(user_id):
     files = csv_handler.download_csv()
-
     return render_template("download.html", user_id=user_id, files=files)
 
 
-@app.route("/active_download/<int:user_id>/filename")
+@app.route("/download_file/<int:user_id>/<filename>")
 @login_required
 @admin_only
-def active_download(user_id, filename):
+def download_file(user_id, filename):
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
 
@@ -357,6 +361,8 @@ def create_recipe(user_id, category_id):
     if form.cancel.data:
         return redirect(url_for("my_recipes", user_id=user_id))
     if form.validate_on_submit():
+        csv_handler.load_csv()
+
         ingredients_text = bleach_text.clean_text(form.ingredients.data)
         directions_text = bleach_text.clean_text(form.directions.data)
 
@@ -424,6 +430,7 @@ def view_recipe(user_id, recipe_id):
 @app.route("/edit_recipe/<int:user_id>", methods=["GET", "POST"])
 @login_required
 @correct_user
+@load_library
 def edit_recipe(user_id):
     recipe_id = request.args.get("recipe_id")
     recipe = Recipes.query.get(recipe_id)
@@ -440,6 +447,8 @@ def edit_recipe(user_id):
     if form.cancel.data:
         return redirect(url_for("view_recipe", user_id=user_id, recipe_id=recipe_id))
     if form.validate_on_submit():
+        print(trie.get_prefix("G"))
+
         if Category.query.filter_by(name=form.recipe_type.data.title()).first():
             category = Category.query.filter_by(name=form.recipe_type.data.title()).first()
         else:
@@ -466,7 +475,7 @@ def edit_recipe(user_id):
                 ing = Ingredients.query.filter_by(name=ingrdnt).first()
                 cur_ing = CurrentIngredients.query.filter_by(name=ingrdnt).first()
                 if ing:
-                    recipe.ingredient.append(ing.id)
+                    recipe.ingredient.append(ing)
                 else:
                     new_ingrdnt = Ingredients(
                         name=ingrdnt,
@@ -561,7 +570,7 @@ def add_ingredient(user_id):
         file_path = os.path.join("static/user_files", new_filename)
         file.save(file_path)
 
-        user_set = csv_handler.process_user_csv(new_filename)
+        user_set = csv_handler.process_csv(new_filename)
         for row in user_set:
             query = Ingredients.query.filter_by(name=row).first()
             current_ingredient = CurrentIngredients.query.filter_by(name=row).first()

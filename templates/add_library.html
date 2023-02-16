@@ -14,7 +14,7 @@
         <div class="container-fluid section text-start">
             {% if files %}
             <div class="category-content">
-                <span class="create-category"><a href="{{ url_for('download_csv', user_id=user_id) }}" class="btn btn-dark">Download Previous Files</a></span>
+                <span class="create-category"><a href="{{ url_for('list_downloads', user_id=user_id) }}" class="btn btn-dark">Download Previous Files</a></span>
             </div>
             {% endif %}
             <div class="form-section">
@@ -25,23 +25,15 @@
                         {% endfor %}
                     {% endif %}
                 {% endwith %}
-                <form action="{{ url_for('ingredient_library', user_id=user_id) }}" method="post" novalidate>
-                    {{ form_add.csrf_token }}
-                    {{ form_add.name.label(class='form-label') }}
-                    {{ form_add.name(class='form-control') }}
-                    {{ form_add.submit(class='btn btn-dark create-btn') }} {{ form_add.cancel(class='btn btn-dark create-btn') }}
-                </form>
-            </div>
-            <div class="form-section">
                 <form action="{{ url_for('ingredient_library', user_id=user_id) }}" method="post" enctype="multipart/form-data" novalidate>
-                    {{ form_upload.csrf_token }}
-                    {{ form_upload.file.label(class='form-label') }}
+                    {{ form.csrf_token }}
+                    {{ form.file.label(class='form-label') }}
                     <p>Upload CSV file with a column labeled "Ingredient"</p>
-                        {% for error in form_upload.file.errors %}
+                        {% for error in form.file.errors %}
                         <p class="messages">{{ error }}</p>
                         {% endfor %}
-                    {{ form_upload.file(class='form-control') }}
-                    {{ form_upload.submit(class='btn btn-dark create-btn') }}
+                    {{ form.file(class='form-control') }}
+                    {{ form.submit(class='btn btn-dark create-btn') }}
                 </form>
             </div>
         </div>
