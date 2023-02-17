@@ -1,5 +1,3 @@
-import csv
-
 from flask import Flask, render_template, redirect, request, url_for, flash, abort, send_from_directory
 from functools import wraps
 from flask_sqlalchemy import SQLAlchemy
@@ -25,9 +23,9 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///meals.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
-trie = Trie(app)
 library = RecipeLibrary(app, os.environ.get("SPOON_API"))
-csv_handler = CSVHandler(app)
+trie = Trie(app)
+csv_handler = CSVHandler(app, trie)
 
 login_manager = LoginManager(app)
 Bootstrap(app)
@@ -74,7 +72,7 @@ class WeeklyMeal(db.Model):
 recipe_to_ingredient = db.Table(
     "recipe_to_ingredient",
     db.Column("recipe_id", db.Integer, db.ForeignKey("recipes.id")),
-    db.Column("ingredient_id", db.Integer, db.ForeignKey("ingredients.id"))
+    db.Column("ingredient_id", db.Integer, db.ForeignKey("ingredients.id")),
 )
 
 
@@ -119,7 +117,7 @@ class CurrentIngredients(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     user = db.relationship("User", back_populates="current_ingredients")
 
-    cur_ingrdt_id = db.Column(db.Integer, db.ForeignKey("ingredients.id"))
+    ingredient_id = db.Column(db.Integer, db.ForeignKey("ingredients.id"))
     ingredient = db.relationship("Ingredients", back_populates="cur_ingrdt")
 
 
@@ -163,13 +161,7 @@ def correct_user(f):
 def load_library(f):
     @wraps(f)
     def decorator(*args, **kwargs):
-        files = os.listdir(app.config['UPLOAD_FOLDER'])
-        if files:
-            with open(f"{app.config['UPLOAD_FOLDER']}/{files[-1]}") as file:
-                read = csv.DictReader(file)
-
-                for row in read:
-                    trie.add_word(row["Ingredient"])
+        csv_handler.load_csv()
         return f(*args, **kwargs)
     return decorator
 
@@ -244,6 +236,8 @@ def ingredient_library(user_id):
         new_filename = f"{filename.split('.')[0]}_{date.today()}.csv"
         file_path = os.path.join(app.config["UPLOAD_FOLDER"], new_filename)
         file.save(file_path)
+
+        csv_handler.load_csv()
         flash("Upload Successful")
         return redirect(url_for("ingredient_library", user_id=user_id, files=files))
 
@@ -354,6 +348,7 @@ def delete_category(user_id, category_id):
 @app.route("/create_recipe/<int:user_id>/<int:category_id>", methods=["GET", "POST"])
 @login_required
 @correct_user
+@load_library
 def create_recipe(user_id, category_id):
     category = Category.query.get(category_id)
     form = RecipesForm(recipe_type=category.name)
@@ -361,8 +356,6 @@ def create_recipe(user_id, category_id):
     if form.cancel.data:
         return redirect(url_for("my_recipes", user_id=user_id))
     if form.validate_on_submit():
-        csv_handler.load_csv()
-
         ingredients_text = bleach_text.clean_text(form.ingredients.data)
         directions_text = bleach_text.clean_text(form.directions.data)
 
@@ -380,28 +373,25 @@ def create_recipe(user_id, category_id):
 
         text = form.ingredients.data
         omit = ["<ul>", "</ul>", "<li>", "</li>", "&nbsp", "frac12", "frac13", "frac14", "&ldquo", "&rdquo", ";", ", ",
-                " (", ")", "&", "\r\n\t", "\r\n"]
+                " (", ")", "&", "\r\n\t", "\r\n", "grated ", "sliced ", "skinless ", "cooked ", "kosher ", "jar ",
+                "cup"]
         for char in omit:
             text = text.replace(char, "-*-")
 
         for ingrdnt in text.title().split("-*-"):
             if trie.search(ingrdnt):
-                ing = Ingredients.query.filter_by(name=ingrdnt).first()
-                cur_ing = CurrentIngredients.query.filter_by(name=ingrdnt).first()
-                if ing:
-                    new_recipe.ingredient.append(ing)
-                    if cur_ing:
-                        cur_ing.ingredient.append(ing)
-                else:
-                    new_ingrdnt = Ingredients(
+                db_ingredient = Ingredients.query.filter_by(name=ingrdnt, user_id=user_id).first()
+                db_cur_ingredient = CurrentIngredients.query.filter_by(name=ingrdnt, user_id=user_id).first()
+                if not db_ingredient:
+                    db_ingredient = Ingredients(
                         name=ingrdnt,
-                        user_id=user_id,
-                        recipe=new_recipe
+                        user_id=user_id
                     )
-                    db.session.add(new_ingrdnt)
-                    new_recipe.ingredient.append(new_ingrdnt)
-                    if cur_ing:
-                        cur_ing.ingredient.append(new_ingrdnt)
+                    db.session.add(db_ingredient)
+                new_recipe.ingredient.append(db_ingredient)
+                if db_cur_ingredient:
+                    db_cur_ingredient.ingredient_id = db_ingredient.id
+                db.session.commit()
 
         db.session.commit()
         return redirect(url_for("my_recipes", user_id=user_id))
@@ -413,6 +403,7 @@ def create_recipe(user_id, category_id):
 @correct_user
 def view_recipe(user_id, recipe_id):
     form = AddToWeek()
+    user = User.query.get(user_id)
     recipe = Recipes.query.get(recipe_id)
 
     if form.validate_on_submit():
@@ -423,8 +414,8 @@ def view_recipe(user_id, recipe_id):
             recipe.my_week_id = None
         db.session.commit()
 
-        return redirect(url_for("view_recipe", user_id=user_id, form=form, recipe_id=recipe_id))
-    return render_template("view_recipe.html", user_id=user_id, form=form, recipe=recipe)
+        return redirect(url_for("view_recipe", user_id=user_id, user=user, form=form, recipe_id=recipe_id))
+    return render_template("view_recipe.html", user_id=user_id, user=user, form=form, recipe=recipe)
 
 
 @app.route("/edit_recipe/<int:user_id>", methods=["GET", "POST"])
@@ -447,11 +438,8 @@ def edit_recipe(user_id):
     if form.cancel.data:
         return redirect(url_for("view_recipe", user_id=user_id, recipe_id=recipe_id))
     if form.validate_on_submit():
-        print(trie.get_prefix("G"))
-
-        if Category.query.filter_by(name=form.recipe_type.data.title()).first():
-            category = Category.query.filter_by(name=form.recipe_type.data.title()).first()
-        else:
+        category = Category.query.filter_by(name=form.recipe_type.data.title()).first()
+        if not category:
             category = Category(
                 name=form.recipe_type.data.title(),
                 user_id=user_id
@@ -462,48 +450,27 @@ def edit_recipe(user_id):
         ingredients_text = bleach_text.clean_text(form.ingredients.data)
         directions_text = bleach_text.clean_text(form.directions.data)
 
-        text = form.ingredients.data
+        text = form.ingredients.data.lower()
         omit = ["<ul>", "</ul>", "<li>", "</li>", "&nbsp", "frac12", "frac13", "frac14", "&ldquo", "&rdquo", ";", ", ",
-                " (", ")", "&", "\r\n\t", "\r\n"]
+                " (", ")", "&", "\r\n\t", "\r\n", "grated ", "sliced ", "skinless ", "cooked ", "kosher ", "jar ",
+                "cup"]
         for char in omit:
             text = text.replace(char, "-*-")
-        print(text.title().split("-*-"))
 
         for ingrdnt in text.title().split("-*-"):
             if trie.search(ingrdnt):
-                print(ingrdnt)
-                ing = Ingredients.query.filter_by(name=ingrdnt).first()
-                cur_ing = CurrentIngredients.query.filter_by(name=ingrdnt).first()
-                if ing:
-                    recipe.ingredient.append(ing)
-                else:
-                    new_ingrdnt = Ingredients(
+                db_ingredient = Ingredients.query.filter_by(name=ingrdnt, user_id=user_id).first()
+                db_cur_ingredient = CurrentIngredients.query.filter_by(name=ingrdnt, user_id=user_id).first()
+                if not db_ingredient:
+                    db_ingredient = Ingredients(
                         name=ingrdnt,
-                        user_id=user_id,
+                        user_id=user_id
                     )
-                    db.session.add(new_ingrdnt)
-                    recipe.ingredient.append(new_ingrdnt)
-        db.session.commit()
-
-
-
-                # print(ingrdnt)
-                # ing = Ingredients.query.filter_by(name=ingrdnt).first()
-                # cur_ing = CurrentIngredients.query.filter_by(name=ingrdnt).first()
-                # if ing:
-                #     recipe.ingredient.append(ing.id)
-                #     if cur_ing:
-                #         cur_ing.ingredient.append(ing.id)
-                # else:
-                #     new_ingrdnt = Ingredients(
-                #         name=ingrdnt,
-                #         user_id=user_id,
-                #         recipe=recipe.id
-                #     )
-                #     db.session.add(new_ingrdnt)
-                #     recipe.ingredient.append(new_ingrdnt.id)
-                #     if cur_ing:
-                #         cur_ing.ingredient.append(new_ingrdnt.id)
+                    db.session.add(db_ingredient)
+                recipe.ingredient.append(db_ingredient)
+                if db_cur_ingredient:
+                    db_cur_ingredient.ingredient_id = db_ingredient.id
+                db.session.commit()
 
         recipe.name = form.name.data
         recipe.recipe_type = form.recipe_type.data
@@ -552,14 +519,14 @@ def add_ingredient(user_id):
         return redirect(url_for("my_ingredients", user_id=user_id))
     if form_add.validate_on_submit():
         related_ingrdt = Ingredients.query.filter_by(name=form_add.name.data.title()).first()
-
-        new_ingredient = CurrentIngredients(
-            name=form_add.name.data.title(),
-            user_id=user_id,
-            ingredient=related_ingrdt.id if related_ingrdt else None
-        )
-        db.session.add(new_ingredient)
-        db.session.commit()
+        if not related_ingrdt:
+            new_ingredient = CurrentIngredients(
+                name=form_add.name.data.title(),
+                user_id=user_id,
+                ingredient=related_ingrdt.id if related_ingrdt else None
+            )
+            db.session.add(new_ingredient)
+            db.session.commit()
         flash("Added to List Successfully")
         return redirect(url_for("my_ingredients", user_id=user_id))
 
@@ -572,15 +539,15 @@ def add_ingredient(user_id):
 
         user_set = csv_handler.process_csv(new_filename)
         for row in user_set:
-            query = Ingredients.query.filter_by(name=row).first()
-            current_ingredient = CurrentIngredients.query.filter_by(name=row).first()
+            query = Ingredients.query.filter_by(name=row, user_id=user_id).first()
+            current_ingredient = CurrentIngredients.query.filter_by(name=row, user_id=user_id).first()
             if current_ingredient and query:
-                current_ingredient.ingredient = query.id
+                current_ingredient.ingredient_id = query.id
             if not current_ingredient:
                 new_ingredient = CurrentIngredients(
                     name=row,
                     user_id=user_id,
-                    ingredient=query.id if query else None
+                    ingredient_id=query.id if query else None
                 )
                 db.session.add(new_ingredient)
         db.session.commit()

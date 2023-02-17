@@ -43,7 +43,7 @@
                     <p>{{ recipe.ingredients | safe }}</p>
                     <ul class="list-group">
                         {% for ingredient in recipe.ingredient %}
-                        <li class="list-group-item">{{ Ingredient }}</li>
+                        <li class="list-group-item">{{ ingredient.name }}</li>
                         {% endfor %}
                     </ul>
 

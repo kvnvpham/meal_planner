@@ -21,7 +21,6 @@ class Trie:
                 cur.children[c] = TrieNode()
             cur = cur.children[c]
         cur.is_word = True
-        print("Added")
 
     def get_prefix(self, word):
         cur = self.root

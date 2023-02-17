@@ -6,9 +6,9 @@ from ingredient_trie import Trie
 class CSVHandler:
     """ The object handles CSV manipulation and content """
 
-    def __init__(self, app):
+    def __init__(self, app, trie):
         self.app = app
-        self.trie = Trie(self.app)
+        self.trie = trie
 
     def load_csv(self):
         files = os.listdir(self.app.config["UPLOAD_FOLDER"])
