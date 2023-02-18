@@ -557,6 +557,16 @@ def add_ingredient(user_id):
     return render_template("add_ingredient.html", user_id=user_id, form_add=form_add, form_upload=form_upload)
 
 
+@app.route("/delete_ingredient/<int:user_id>/<int:ingredient_id>")
+@login_required
+@correct_user
+def delete_ingredient(user_id, ingredient_id):
+    ingredient = CurrentIngredients.query.get(ingredient_id)
+    db.session.delete(ingredient)
+    db.session.commit()
+    return redirect(url_for("my_ingredients", user_id=user_id))
+
+
 @app.route("/search/<int:user_id>", methods=['GET', 'POST'])
 @login_required
 @correct_user

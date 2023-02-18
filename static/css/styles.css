@@ -230,6 +230,19 @@
     padding-bottom: 4%;
 }
 
+/* My Ingredients */
+
+.ingredient-pad {
+    padding-bottom: 1%;
+}
+
+.ingredient-spacing {
+    padding-top: 1%;
+}
+.delete-btn {
+    font-size: 0.8rem;
+}
+
 /* Search */
 
 .search-content {
