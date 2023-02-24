@@ -7,7 +7,7 @@ class TrieNode:
 
 
 class Trie:
-    """ The object manages Trie data by adding words to the data structure and recalling existing words """
+    """ The object manages Trie data by adding words to the data structure and recalling existing words/prefixes """
 
     def __init__(self, app):
         self.app = app

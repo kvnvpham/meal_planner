@@ -34,6 +34,8 @@ bleach_text = Bleach(app)
 
 
 class User(UserMixin, db.Model):
+    """ Stores User credentials """
+
     __tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
@@ -48,6 +50,8 @@ class User(UserMixin, db.Model):
 
 
 class Category(db.Model):
+    """ Stores and categorizes a group recipes based on the category name assigned """
+
     __tablename__ = "category"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(250), nullable=False)
@@ -60,6 +64,8 @@ class Category(db.Model):
 
 
 class WeeklyMeal(db.Model):
+    """ Stores and assigns a recipe to a specific day of the week """
+
     __tablename__ = "weekly_meal"
     id = db.Column(db.Integer, primary_key=True)
     day_of_week = db.Column(db.String(250), nullable=False)
@@ -77,6 +83,8 @@ recipe_to_ingredient = db.Table(
 
 
 class Recipes(db.Model):
+    """ Stores relevant recipe information entered by the user """
+
     __tablename__ = "recipes"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(500), nullable=False)
@@ -99,6 +107,11 @@ class Recipes(db.Model):
 
 
 class Ingredients(db.Model):
+    """
+    Stores related ingredients to a specific recipe based on what the user input in the ingredients field
+    of the Recipes table
+    """
+
     __tablename__ = "ingredients"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(500), nullable=False)
@@ -110,6 +123,8 @@ class Ingredients(db.Model):
 
 
 class CurrentIngredients(db.Model):
+    """ Stores a list of ingredients the user has entered based on their current available ingredients """
+
     __tablename__ = "current_ingredients"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(500), nullable=False)
@@ -123,6 +138,7 @@ class CurrentIngredients(db.Model):
 
 @db.event.listens_for(User, "after_insert")
 def insert_day(mapper, connection, target):
+    """ Creates a list of days of the week and connects it a user when they register an account """
     week = WeeklyMeal.__table__
 
     days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
@@ -137,10 +153,12 @@ with app.app_context():
 
 @login_manager.user_loader
 def load_user(user_id):
+    """ Loads an authenticated user """
     return User.query.get(int(user_id))
 
 
 def admin_only(f):
+    """ Decorator to assign specific routes for administrator only """
     @wraps(f)
     def decorator(*args, **kwargs):
         if current_user.id != 1:
@@ -150,6 +168,7 @@ def admin_only(f):
 
 
 def correct_user(f):
+    """ Decorator to ensure a specific user is only able to access data for their account only """
     @wraps(f)
     def decorator(*args, **kwargs):
         if kwargs["user_id"] != current_user.id:
@@ -159,6 +178,7 @@ def correct_user(f):
 
 
 def load_library(f):
+    """ Loads the most recent ingredient library to the Trie for ingredient recognition """
     @wraps(f)
     def decorator(*args, **kwargs):
         csv_handler.load_csv()
@@ -168,6 +188,7 @@ def load_library(f):
 
 @app.route("/")
 def home():
+    """ Display the home page for users, unauthenticated users are automatically assigned an ID of 0 """
     if not current_user.is_authenticated:
         return render_template("index.html", user_id=0)
     return render_template("index.html", user_id=current_user.id)
@@ -175,6 +196,7 @@ def home():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    """ Allows users to register an account. If a user already exists, they will be redirected to the login page """
     form = RegisterForm()
 
     if form.validate_on_submit():
@@ -203,14 +225,14 @@ def register():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    """ Allows a user to login into their account """
     form = LoginForm()
 
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
-        if user:
-            if check_password_hash(user.password, form.password.data):
-                login_user(user)
-                return redirect(url_for("home", user_id=current_user.id))
+        if user and check_password_hash(user.password, form.password.data):
+            login_user(user)
+            return redirect(url_for("home", user_id=current_user.id))
         flash("Incorrect credentials. Please try again.")
         return redirect(url_for("login", user_id=0))
     return render_template("login.html", form=form, user_id=0)
@@ -219,6 +241,7 @@ def login():
 @app.route("/logout")
 @login_required
 def logout():
+    """ Allows a user to logout of their account """
     logout_user()
     return redirect(url_for("home"))
 
@@ -227,6 +250,10 @@ def logout():
 @login_required
 @admin_only
 def ingredient_library(user_id):
+    """
+    Provides the ingredient library form which allows administrators to save their files to the system and load
+    data into the Trie
+    """
     form = LibraryFileForm()
     files = csv_handler.download_csv()
 
@@ -248,6 +275,7 @@ def ingredient_library(user_id):
 @login_required
 @admin_only
 def list_downloads(user_id):
+    """ Displays a list of previous uploaded csv files for administrators only """
     files = csv_handler.download_csv()
     return render_template("download.html", user_id=user_id, files=files)
 
@@ -256,6 +284,7 @@ def list_downloads(user_id):
 @login_required
 @admin_only
 def download_file(user_id, filename):
+    """ Enables administrators to download past uploaded csv files """
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
 
@@ -263,6 +292,7 @@ def download_file(user_id, filename):
 @login_required
 @correct_user
 def my_week(user_id):
+    """ Displays recipes that are planned for the current week """
     user = User.query.get(user_id)
 
     return render_template("my_week.html", user_id=user_id, user=user)
@@ -272,6 +302,7 @@ def my_week(user_id):
 @login_required
 @correct_user
 def random_recipe(user_id):
+    """ Generates a random recipe for users based on their existing recipe database """
     user = User.query.get(user_id)
 
     rand = random.choice(user.recipes)
@@ -283,6 +314,7 @@ def random_recipe(user_id):
 @login_required
 @correct_user
 def my_recipes(user_id):
+    """ Displays all categories and recipes associated with the user """
     user = User.query.get(user_id)
 
     return render_template("my_recipes.html", user_id=current_user.id, user=user)
@@ -292,6 +324,7 @@ def my_recipes(user_id):
 @login_required
 @correct_user
 def create_category(user_id):
+    """ Enables users to customize the name and icon of their desired category for food/recipes """
     form = CreateCategory()
 
     if form.cancel.data:
@@ -312,6 +345,7 @@ def create_category(user_id):
 @login_required
 @correct_user
 def edit_category(user_id, category_id):
+    """ Enables users to edit existing names and icons of their food/recipe categories """
     category_info = Category.query.get(category_id)
 
     form = CreateCategory(
@@ -334,6 +368,9 @@ def edit_category(user_id, category_id):
 @login_required
 @correct_user
 def delete_category(user_id, category_id):
+    """
+    Enables users to delete categories they no longer desire. This will also delete all recipes under that category
+    """
     user = User.query.get(user_id)
 
     for recipe in user.recipes:
@@ -350,6 +387,10 @@ def delete_category(user_id, category_id):
 @correct_user
 @load_library
 def create_recipe(user_id, category_id):
+    """
+    Allows users to input various information for a recipe under the specified category.
+    The trie will also recognize ingredient names and add it in the database to display
+    """
     category = Category.query.get(category_id)
     form = RecipesForm(recipe_type=category.name)
 
@@ -402,6 +443,10 @@ def create_recipe(user_id, category_id):
 @login_required
 @correct_user
 def view_recipe(user_id, recipe_id):
+    """
+    Allows users to view the information they have entered and also allow them to assign the recipe to a specified
+    day of the week
+    """
     form = AddToWeek()
     user = User.query.get(user_id)
     recipe = Recipes.query.get(recipe_id)
@@ -423,6 +468,7 @@ def view_recipe(user_id, recipe_id):
 @correct_user
 @load_library
 def edit_recipe(user_id):
+    """ Similar to adding a recipe, the user will be able to edit pre-existing information """
     recipe_id = request.args.get("recipe_id")
     recipe = Recipes.query.get(recipe_id)
 
@@ -493,6 +539,7 @@ def edit_recipe(user_id):
 @login_required
 @correct_user
 def delete_recipe(user_id, recipe_id):
+    """ Enables users to delete the specified recipe from the database """
     recipe = Recipes.query.get(recipe_id)
     db.session.delete(recipe)
     db.session.commit()
@@ -503,6 +550,7 @@ def delete_recipe(user_id, recipe_id):
 @login_required
 @correct_user
 def my_ingredients(user_id):
+    """ Displays a list of ingredients that the user currently possess """
     user = User.query.get(user_id)
 
     return render_template("my_ingredients.html", user_id=user_id, user=user)
@@ -512,6 +560,10 @@ def my_ingredients(user_id):
 @login_required
 @correct_user
 def add_ingredient(user_id):
+    """
+    Allows users to add ingredients to their current ingredient database either through a single entry
+    or with a csv file. The function will not add the ingredient if it already exists within the database
+    """
     form_add = AddIngredient()
     form_upload = LibraryFileForm()
 
@@ -561,6 +613,7 @@ def add_ingredient(user_id):
 @login_required
 @correct_user
 def delete_ingredient(user_id, ingredient_id):
+    """ Deletes the desired ingredient from the user's current ingredient database """
     ingredient = CurrentIngredients.query.get(ingredient_id)
     db.session.delete(ingredient)
     db.session.commit()
@@ -571,6 +624,7 @@ def delete_ingredient(user_id, ingredient_id):
 @login_required
 @correct_user
 def search(user_id):
+    """ Utilizes Spoonacular's API database to search for recipes related to the entered keyword """
     form = SearchRecipe()
 
     if form.validate_on_submit():
@@ -584,6 +638,10 @@ def search(user_id):
 @login_required
 @correct_user
 def get_recipe_info(user_id, search_id):
+    """
+    Retrieves the associated recipe ID from the search function to display all relevant information for the requested
+    recipe
+    """
     result = library.get_recipe(search_id)
 
     return render_template("recipe_information.html", user_id=user_id, search_id=search_id, result=result)
@@ -591,6 +649,7 @@ def get_recipe_info(user_id, search_id):
 
 @app.context_processor
 def inj_copyright():
+    """ Displays the current year for the copyright notice """
     return {"year": date.today().year}
 
 

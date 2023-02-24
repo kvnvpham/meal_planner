@@ -2,7 +2,7 @@ import requests
 
 
 class RecipeLibrary:
-    """ The object calls and retrieves data from specified API """
+    """ The object calls and retrieves data from a specified API """
 
     def __init__(self, app, key):
         self.app = app
