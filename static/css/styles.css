@@ -1,5 +1,17 @@
 /* All / Base */
 
+body {
+    font-family: 'Montserrat', sans-serif;
+}
+
+h1, h2, h3 {
+    font-family: 'Open Sans', sans-serif;
+}
+
+h1, h2 {
+    font-weight: 700;
+}
+
 .brand-align {
     padding-left: 4%;
 }
@@ -47,7 +59,6 @@
     background-image: url('../images/register-bg.jpg');
     background-position: center 54%;
     background-size: 112vmax;
-    color: #ffffff;
 }
 
 /* Login */
@@ -169,7 +180,6 @@
     background-image: url('../images/category-bg.jpg');
     background-position: center 40%;
     background-size: 100vmax;
-    color: #ffffff;
 }
 
 .form-section {
