@@ -5,6 +5,7 @@
 * [Description](#description)
 * [Installation](#installation)
 * [Project Details](#project-details)
+* [Links](#links)
 
 </details>
 
