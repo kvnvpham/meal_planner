@@ -16,7 +16,7 @@ import os
 from bleach_text import Bleach
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "super secret"
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
 app.config["UPLOAD_FOLDER"] = "static/files"
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///meals.db"
