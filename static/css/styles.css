@@ -202,6 +202,7 @@ img.image-key2 {
 
 .card {
     width: 15rem;
+    border-radius: 5%;
 }
 
 .card-images {
