@@ -4,6 +4,10 @@ body {
     font-family: 'Montserrat', sans-serif;
 }
 
+.navbar {
+    border-bottom: 0.1rem solid #111;
+}
+
 h1, h2, h3 {
     font-family: 'Open Sans', sans-serif;
 }
@@ -40,10 +44,46 @@ h1, h2 {
     background-image: url('../images/bg.jpg');
     background-position: center 45%;
     background-size: 110vmax;
+    border-bottom: 0.1rem solid #eee;
 }
 
 .title {
     padding: 20% 4%;
+}
+
+h2.features-subtitle {
+    margin: 4%;
+}
+
+div.points-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+div.key-points {
+    display: flex;
+    flex-direction: column;
+}
+
+div.point {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 7%;
+}
+
+img.point-size {
+    width: 8rem;
+    height: 8rem;
+}
+
+img.image-key1 {
+    margin-right: 3rem;
+}
+
+img.image-key2 {
+    margin-left: 3rem;
 }
 
 /* Download */
